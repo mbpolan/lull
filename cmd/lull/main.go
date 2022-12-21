@@ -6,9 +6,9 @@ import (
 )
 
 func main() {
-	root := ui.NewRoot()
-
 	app := tview.NewApplication()
+	root := ui.NewRoot(app)
+
 	app.SetRoot(root.Widget(), true)
 	app.SetFocus(root.Widget())
 

@@ -10,6 +10,13 @@ type Content struct {
 	response *Payload
 }
 
+type ContentWidget int16
+
+const (
+	ContentRequestBody ContentWidget = iota
+	ContentURLBox
+)
+
 // NewContent returns a new Content instance.
 func NewContent() *Content {
 	c := new(Content)
@@ -21,6 +28,15 @@ func NewContent() *Content {
 // Widget returns a primitive widget containing this component.
 func (c *Content) Widget() *tview.Flex {
 	return c.flex
+}
+
+func (c *Content) SetFocus(widget ContentWidget) {
+	switch widget {
+	case ContentRequestBody:
+		GetApplication().SetFocus(c.request.Widget())
+	case ContentURLBox:
+		GetApplication().SetFocus(c.url.Widget())
+	}
 }
 
 func (c *Content) build() {
