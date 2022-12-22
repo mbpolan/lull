@@ -1,6 +1,9 @@
 package ui
 
-import "github.com/rivo/tview"
+import (
+	"github.com/mbpolan/lull/internal/state"
+	"github.com/rivo/tview"
+)
 
 // URLBox is a view that contains an HTTP method, URL and other input components.
 type URLBox struct {
@@ -9,20 +12,14 @@ type URLBox struct {
 	method         *tview.DropDown
 	url            *tview.InputField
 	allowedMethods []string
-	vm             *viewModel
-}
-
-type viewModel struct {
-	method int
-	url    string
+	state          *state.AppState
 }
 
 // NewURLBox returns a new instance of URLBox.
-func NewURLBox() *URLBox {
+func NewURLBox(state *state.AppState) *URLBox {
 	u := new(URLBox)
+	u.state = state
 	u.allowedMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
-	u.vm = new(viewModel)
-	u.vm.method = 0
 	u.build()
 
 	return u
@@ -34,20 +31,36 @@ func (u *URLBox) Widget() *tview.Form {
 }
 
 func (u *URLBox) build() {
+	curMethod := u.currentMethod()
+
 	u.form = tview.NewForm()
 	u.form.SetBorder(true)
 	u.form.SetHorizontal(true)
 
 	u.method = tview.NewDropDown()
-	u.method.SetCurrentOption(u.vm.method)
+	u.method.SetCurrentOption(curMethod)
 	u.method.SetOptions(u.allowedMethods, u.handleMethodChanged)
 
 	u.url = tview.NewInputField()
 
-	u.form.AddDropDown("", u.allowedMethods, u.vm.method, u.handleMethodChanged)
-	u.form.AddInputField("", u.vm.url, 500, nil, nil)
+	u.form.AddDropDown("", u.allowedMethods, curMethod, u.handleMethodChanged)
+	u.form.AddInputField("", u.state.URL, 500, nil, u.handleURLChanged)
+}
+
+func (u *URLBox) currentMethod() int {
+	for i, method := range u.allowedMethods {
+		if method == u.state.Method {
+			return i
+		}
+	}
+
+	return -1
 }
 
 func (u *URLBox) handleMethodChanged(text string, index int) {
-	u.vm.method = index
+	u.state.URL = text
+}
+
+func (u *URLBox) handleURLChanged(text string) {
+	u.state.URL = text
 }

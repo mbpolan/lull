@@ -1,6 +1,11 @@
 package ui
 
-import "github.com/rivo/tview"
+import (
+	"github.com/mbpolan/lull/internal/state"
+	"github.com/rivo/tview"
+	"io"
+	"net/http"
+)
 
 // Content provides a view that shows a request, response and URL input box.
 type Content struct {
@@ -8,6 +13,7 @@ type Content struct {
 	url      *URLBox
 	request  *Payload
 	response *Payload
+	state    *state.AppState
 }
 
 type ContentWidget int16
@@ -18,8 +24,9 @@ const (
 )
 
 // NewContent returns a new Content instance.
-func NewContent() *Content {
+func NewContent(state *state.AppState) *Content {
 	c := new(Content)
+	c.state = state
 	c.build()
 
 	return c
@@ -40,9 +47,9 @@ func (c *Content) SetFocus(widget ContentWidget) {
 }
 
 func (c *Content) build() {
-	c.url = NewURLBox()
-	c.request = NewPayload("Request")
-	c.response = NewPayload("Response")
+	c.url = NewURLBox(c.state)
+	c.request = NewPayload("Request", false)
+	c.response = NewPayload("Response", true)
 
 	split := tview.NewFlex()
 	split.AddItem(c.request.Widget(), 0, 1, false)
@@ -52,4 +59,13 @@ func (c *Content) build() {
 	c.flex.SetDirection(tview.FlexRow)
 	c.flex.AddItem(c.url.Widget(), 5, 0, true)
 	c.flex.AddItem(split, 0, 5, false)
+}
+
+func (c *Content) SetResponse(res *http.Response, err error) {
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		body = []byte{}
+	}
+
+	c.response.SetData(res.StatusCode, body, err)
 }

@@ -1,15 +1,20 @@
 package ui
 
-import "github.com/rivo/tview"
+import (
+	"github.com/mbpolan/lull/internal/state"
+	"github.com/rivo/tview"
+)
 
 // Collection is a view that shows saved API requests.
 type Collection struct {
-	tree *tview.TreeView
+	state *state.AppState
+	tree  *tview.TreeView
 }
 
 // NewCollection returns a new instance of Collection.
-func NewCollection() *Collection {
+func NewCollection(state *state.AppState) *Collection {
 	p := new(Collection)
+	p.state = state
 	p.build()
 
 	return p
