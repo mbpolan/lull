@@ -3,7 +3,6 @@ package ui
 import (
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
-	"io"
 	"net/http"
 )
 
@@ -11,8 +10,8 @@ import (
 type Content struct {
 	flex     *tview.Flex
 	url      *URLBox
-	request  *Payload
-	response *Payload
+	request  *RequestView
+	response *ResponseView
 	state    *state.AppState
 }
 
@@ -48,8 +47,8 @@ func (c *Content) SetFocus(widget ContentWidget) {
 
 func (c *Content) build() {
 	c.url = NewURLBox(c.state)
-	c.request = NewPayload("Request", false)
-	c.response = NewPayload("Response", true)
+	c.request = NewRequestView("Request", c.state)
+	c.response = NewResponseView("Response", c.state)
 
 	split := tview.NewFlex()
 	split.AddItem(c.request.Widget(), 0, 1, false)
@@ -61,11 +60,6 @@ func (c *Content) build() {
 	c.flex.AddItem(split, 0, 5, false)
 }
 
-func (c *Content) SetResponse(res *http.Response, err error) {
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		body = []byte{}
-	}
-
-	c.response.SetData(res.StatusCode, body, err)
+func (c *Content) SetResponse(res *http.Response) {
+	c.response.SetResponse(res)
 }

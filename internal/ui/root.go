@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/network"
 	"github.com/mbpolan/lull/internal/state"
@@ -79,16 +80,18 @@ func (r *Root) sendCurrentRequest() {
 
 	uri, err := url.Parse(r.state.URL)
 	if err != nil {
+		fmt.Printf("Shit: %+v\n", err)
 		return // FIXME
 	}
 
-	res, err := client.Exchange(r.state.Method, uri)
+	res, err := client.Exchange(r.state.Method, uri, r.state.RequestBody)
 	if err != nil {
+		fmt.Printf("Shit: %+v\n", err)
 		return // FIXME
 	}
 
 	r.state.Response = res
 	r.state.LastError = err
 
-	r.content.SetResponse(res, err)
+	r.content.SetResponse(res)
 }
