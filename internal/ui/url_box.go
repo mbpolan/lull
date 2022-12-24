@@ -9,8 +9,6 @@ import (
 type URLBox struct {
 	flex           *tview.Flex
 	form           *tview.Form
-	method         *tview.DropDown
-	url            *tview.InputField
 	allowedMethods []string
 	state          *state.AppState
 }
@@ -37,12 +35,6 @@ func (u *URLBox) build() {
 	u.form.SetBorder(true)
 	u.form.SetHorizontal(true)
 
-	u.method = tview.NewDropDown()
-	u.method.SetCurrentOption(curMethod)
-	u.method.SetOptions(u.allowedMethods, u.handleMethodChanged)
-
-	u.url = tview.NewInputField()
-
 	u.form.AddDropDown("", u.allowedMethods, curMethod, u.handleMethodChanged)
 	u.form.AddInputField("", u.state.URL, 500, nil, u.handleURLChanged)
 }
@@ -58,7 +50,7 @@ func (u *URLBox) currentMethod() int {
 }
 
 func (u *URLBox) handleMethodChanged(text string, index int) {
-	u.state.URL = text
+	u.state.Method = text
 }
 
 func (u *URLBox) handleURLChanged(text string) {

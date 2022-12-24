@@ -25,6 +25,7 @@ func NewRoot(app *tview.Application) *Root {
 
 	r := new(Root)
 	r.state = new(state.AppState)
+	r.state.Method = "GET"
 	r.build()
 
 	return r
