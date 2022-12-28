@@ -56,7 +56,7 @@ func (c *Content) build() {
 
 	c.flex = tview.NewFlex()
 	c.flex.SetDirection(tview.FlexRow)
-	c.flex.AddItem(c.url.Widget(), 5, 0, true)
+	c.flex.AddItem(c.url.Widget(), 3, 0, true)
 	c.flex.AddItem(split, 0, 5, false)
 }
 
