@@ -33,7 +33,7 @@ func NewRoot(app *tview.Application) *Root {
 
 	r := new(Root)
 	r.currentModal = ""
-	r.state = new(state.AppState)
+	r.state = state.NewAppState()
 	r.state.Method = "GET"
 	r.build()
 
@@ -81,6 +81,8 @@ func (r *Root) build() {
 
 func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 	switch code {
+	case tcell.KeyCtrlL:
+		r.collection.SetFocus()
 	case tcell.KeyCtrlA:
 		r.content.SetFocus(ContentURLBox)
 	case tcell.KeyCtrlR:
