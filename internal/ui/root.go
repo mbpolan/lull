@@ -11,10 +11,12 @@ import (
 
 // Root is a top-level container for all application UI components.
 type Root struct {
-	state      *state.AppState
-	flex       *tview.Flex
-	collection *Collection
-	content    *Content
+	pages            *tview.Pages
+	flex             *tview.Flex
+	saveRequestModal *SaveRequestModal
+	collection       *Collection
+	content          *Content
+	state            *state.AppState
 }
 
 var application *tview.Application
@@ -36,11 +38,13 @@ func GetApplication() *tview.Application {
 }
 
 // Widget returns a primitive widget containing this component.
-func (r *Root) Widget() *tview.Flex {
-	return r.flex
+func (r *Root) Widget() *tview.Pages {
+	return r.pages
 }
 
 func (r *Root) build() {
+	r.pages = tview.NewPages()
+
 	// create child widgets
 	r.collection = NewCollection(r.state)
 	r.content = NewContent(r.state)
@@ -59,6 +63,11 @@ func (r *Root) build() {
 
 		return event
 	})
+
+	r.saveRequestModal = NewSaveRequestModal(r.handleSaveCurrentRequest, r.handleCloseModal)
+
+	r.pages.AddAndSwitchToPage("main", r.flex, true)
+	r.pages.AddPage("saveRequestModal", r.saveRequestModal.Widget(), true, false)
 }
 
 func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
@@ -69,11 +78,21 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 		r.content.SetFocus(ContentRequestBody)
 	case tcell.KeyCtrlG:
 		r.sendCurrentRequest()
+	case tcell.KeyCtrlS:
+		r.saveCurrentRequest()
 	default:
 		return false
 	}
 
 	return true
+}
+
+func (r *Root) saveCurrentRequest() {
+	r.pages.ShowPage("saveRequestModal")
+}
+
+func (r *Root) handleSaveCurrentRequest(name string) {
+	r.handleCloseModal()
 }
 
 func (r *Root) sendCurrentRequest() {
@@ -95,4 +114,8 @@ func (r *Root) sendCurrentRequest() {
 	r.state.LastError = err
 
 	r.content.SetResponse(res)
+}
+
+func (r *Root) handleCloseModal() {
+	r.pages.HidePage("saveRequestModal")
 }
