@@ -22,7 +22,7 @@ type CollectionItem struct {
 	isGroup  bool
 	name     string
 	method   string
-	url      url.URL
+	url      string
 	children []*CollectionItem
 }
 
