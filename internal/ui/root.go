@@ -9,6 +9,13 @@ import (
 	"net/url"
 )
 
+var application *tview.Application
+
+const (
+	rootPageMain             string = "main"
+	rootPageSaveRequestModal        = "saveRequestModal"
+)
+
 // Root is a top-level container for all application UI components.
 type Root struct {
 	pages            *tview.Pages
@@ -16,16 +23,16 @@ type Root struct {
 	saveRequestModal *SaveRequestModal
 	collection       *Collection
 	content          *Content
+	currentModal     string
 	state            *state.AppState
 }
-
-var application *tview.Application
 
 // NewRoot returns a new Root instance.
 func NewRoot(app *tview.Application) *Root {
 	application = app
 
 	r := new(Root)
+	r.currentModal = ""
 	r.state = new(state.AppState)
 	r.state.Method = "GET"
 	r.build()
@@ -33,6 +40,7 @@ func NewRoot(app *tview.Application) *Root {
 	return r
 }
 
+// GetApplication returns the shared instance of tview.Application.
 func GetApplication() *tview.Application {
 	return application
 }
@@ -64,10 +72,11 @@ func (r *Root) build() {
 		return event
 	})
 
-	r.saveRequestModal = NewSaveRequestModal(r.handleSaveCurrentRequest, r.handleCloseModal)
+	r.saveRequestModal = NewSaveRequestModal(r.handleSaveCurrentRequest, r.hideCurrentModal)
 
-	r.pages.AddAndSwitchToPage("main", r.flex, true)
-	r.pages.AddPage("saveRequestModal", r.saveRequestModal.Widget(), true, false)
+	// create pages containing the main content and various modals that can be opened
+	r.pages.AddAndSwitchToPage(rootPageMain, r.flex, true)
+	r.pages.AddPage(rootPageSaveRequestModal, r.saveRequestModal.Widget(), true, false)
 }
 
 func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
@@ -88,11 +97,23 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 }
 
 func (r *Root) saveCurrentRequest() {
-	r.pages.ShowPage("saveRequestModal")
+	r.showModal(rootPageSaveRequestModal)
 }
 
 func (r *Root) handleSaveCurrentRequest(name string) {
-	r.handleCloseModal()
+	r.hideCurrentModal()
+}
+
+func (r *Root) showModal(pageName string) {
+	r.currentModal = pageName
+	r.pages.ShowPage(pageName)
+}
+
+func (r *Root) hideCurrentModal() {
+	if r.currentModal != "" {
+		r.pages.HidePage(r.currentModal)
+		r.currentModal = ""
+	}
 }
 
 func (r *Root) sendCurrentRequest() {
@@ -114,8 +135,4 @@ func (r *Root) sendCurrentRequest() {
 	r.state.LastError = err
 
 	r.content.SetResponse(res)
-}
-
-func (r *Root) handleCloseModal() {
-	r.pages.HidePage("saveRequestModal")
 }
