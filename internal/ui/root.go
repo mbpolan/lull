@@ -7,6 +7,7 @@ import (
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
 	"net/url"
+	"strings"
 )
 
 var application *tview.Application
@@ -99,6 +100,27 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 }
 
 func (r *Root) saveCurrentRequest() {
+	item := r.state.SelectedItem
+	if r.state.SelectedItem == nil {
+		// really shouldn't happen; default to collection root
+		item = r.state.Collection
+	}
+
+	// if this item is not a group, select its parent
+	if !item.IsGroup() {
+		item = item.Parent()
+	}
+
+	// collect ancestors and form a path
+	ancestors := item.Ancestors()
+	path := make([]string, len(ancestors))
+	for _, i := range ancestors {
+		path = append(path, i.Name())
+	}
+
+	path = append(path, item.Name())
+
+	r.saveRequestModal.SetPathText(strings.Join(path, " > "))
 	r.showModal(rootPageSaveRequestModal)
 }
 

@@ -41,7 +41,7 @@ func (p *Collection) build() {
 }
 
 func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode {
-	node := tview.NewTreeNode(item.GetName())
+	node := tview.NewTreeNode(item.Name())
 	node.SetReference(item)
 
 	if item.IsGroup() {
