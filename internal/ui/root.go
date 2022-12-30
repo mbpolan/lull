@@ -91,7 +91,7 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 	case tcell.KeyCtrlG:
 		r.sendCurrentRequest()
 	case tcell.KeyCtrlS:
-		r.saveCurrentRequest()
+		r.showSaveCurrentRequest()
 	default:
 		return false
 	}
@@ -99,7 +99,7 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 	return true
 }
 
-func (r *Root) saveCurrentRequest() {
+func (r *Root) pathToSelectedCollectionItemGroup() []*state.CollectionItem {
 	item := r.state.SelectedItem
 	if r.state.SelectedItem == nil {
 		// really shouldn't happen; default to collection root
@@ -111,20 +111,30 @@ func (r *Root) saveCurrentRequest() {
 		item = item.Parent()
 	}
 
+	return append(item.Ancestors(), item)
+}
+
+func (r *Root) showSaveCurrentRequest() {
 	// collect ancestors and form a path
-	ancestors := item.Ancestors()
+	ancestors := r.pathToSelectedCollectionItemGroup()
 	path := make([]string, len(ancestors))
 	for _, i := range ancestors {
 		path = append(path, i.Name())
 	}
-
-	path = append(path, item.Name())
 
 	r.saveRequestModal.SetPathText(strings.Join(path, " > "))
 	r.showModal(rootPageSaveRequestModal)
 }
 
 func (r *Root) handleSaveCurrentRequest(name string) {
+	path := r.pathToSelectedCollectionItemGroup()
+	leaf := path[len(path)-1]
+
+	// collect current request information and add it to the collection
+	item := state.NewCollectionRequest(name, r.state.Method, r.state.URL, leaf)
+	leaf.AddChild(item)
+
+	r.collection.Reload()
 	r.hideCurrentModal()
 }
 
