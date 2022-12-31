@@ -22,6 +22,15 @@ func NewRequestView(title string, state *state.AppState) *RequestView {
 	return p
 }
 
+// Reload refreshes the state of the component with current app state.
+func (p *RequestView) Reload() {
+	if p.state.ActiveItem == nil {
+		return
+	}
+
+	p.body.SetText(p.state.ActiveItem.RequestBody(), false)
+}
+
 // Widget returns a primitive widget containing this component.
 func (p *RequestView) Widget() *tview.Flex {
 	return p.flex
@@ -41,5 +50,10 @@ func (p *RequestView) build(title string) {
 }
 
 func (p *RequestView) handleBodyChange() {
-	p.state.RequestBody = p.body.GetText()
+	if p.state.ActiveItem == nil {
+		return
+	}
+
+	p.state.ActiveItem.SetRequestBody(p.body.GetText())
 }
+

@@ -5,10 +5,13 @@ import (
 	"github.com/rivo/tview"
 )
 
+type ActiveNodeHandler func(item *state.CollectionItem)
+
 // Collection is a view that shows saved API requests.
 type Collection struct {
-	tree  *tview.TreeView
-	state *state.AppState
+	tree     *tview.TreeView
+	state    *state.AppState
+	onActive ActiveNodeHandler
 }
 
 // NewCollection returns a new instance of Collection.
@@ -18,6 +21,11 @@ func NewCollection(state *state.AppState) *Collection {
 	p.build()
 
 	return p
+}
+
+// SetItemActivatedHandler sets the callback to invoke when an item is activated in the tree.
+func (p *Collection) SetItemActivatedHandler(handler ActiveNodeHandler) {
+	p.onActive = handler
 }
 
 // Widget returns a primitive widget containing this component.
@@ -39,6 +47,11 @@ func (p *Collection) Reload() {
 	} else {
 		p.tree.SetCurrentNode(selected)
 	}
+
+	// set the previously active node
+	if active := p.findNodeForItem(root, p.state.ActiveItem); active != nil {
+		p.setNodeActive(active, false)
+	}
 }
 
 // SetFocus sets the focus on this component.
@@ -50,9 +63,32 @@ func (p *Collection) build() {
 	p.tree = tview.NewTreeView()
 	p.tree.SetTitle("Collection")
 	p.tree.SetBorder(true)
+	p.tree.SetSelectedFunc(func(node *tview.TreeNode) {
+		p.setNodeActive(node, true)
+	})
 
 	p.Reload()
-	p.tree.SetCurrentNode(p.tree.GetRoot())
+}
+
+// setNodeActive changes the currently active node in the tree. The fireCallback will control if the handler for item
+// activation changes will be invoked.
+func (p *Collection) setNodeActive(node *tview.TreeNode, fireCallback bool) {
+	// prevent activating group node
+	item := node.GetReference().(*state.CollectionItem)
+	if item.IsGroup() {
+		return
+	}
+
+	// restore the color on the previously active node
+	if previous := p.findNodeForItem(p.tree.GetRoot(), p.state.ActiveItem); previous != nil {
+		previous.SetColor(tview.Styles.PrimaryTextColor)
+	}
+
+	node.SetColor(tview.Styles.TertiaryTextColor)
+
+	if fireCallback {
+		p.onActive(item)
+	}
 }
 
 func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode {
@@ -69,6 +105,10 @@ func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode 
 }
 
 func (p *Collection) findNodeForItem(node *tview.TreeNode, item *state.CollectionItem) *tview.TreeNode {
+	if node == nil {
+		return nil
+	}
+
 	if node.GetReference() == item {
 		return node
 	}

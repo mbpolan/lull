@@ -35,7 +35,6 @@ func NewRoot(app *tview.Application) *Root {
 	r := new(Root)
 	r.currentModal = ""
 	r.state = state.NewAppState()
-	r.state.Method = "GET"
 	r.build()
 
 	return r
@@ -56,6 +55,7 @@ func (r *Root) build() {
 
 	// create child widgets
 	r.collection = NewCollection(r.state)
+	r.collection.SetItemActivatedHandler(r.setCurrentRequest)
 	r.content = NewContent(r.state)
 
 	// arrange them in a flex layout
@@ -127,15 +127,32 @@ func (r *Root) showSaveCurrentRequest() {
 }
 
 func (r *Root) handleSaveCurrentRequest(name string) {
+	if r.state.ActiveItem == nil {
+		return
+	}
+
+	active := r.state.ActiveItem
 	path := r.pathToSelectedCollectionItemGroup()
 	leaf := path[len(path)-1]
 
 	// collect current request information and add it to the collection
-	item := state.NewCollectionRequest(name, r.state.Method, r.state.URL, leaf)
+	item := state.NewCollectionRequest(name, active.Method(), active.URL(), leaf)
+	item.SetRequestBody(active.RequestBody())
+	item.SetResponse(active.Response())
 	leaf.AddChild(item)
 
 	r.collection.Reload()
 	r.hideCurrentModal()
+}
+
+func (r *Root) setCurrentRequest(item *state.CollectionItem) {
+	if r.state.ActiveItem == item {
+		return
+	}
+
+	// reload views to synchronize with app state
+	r.state.ActiveItem = item
+	r.content.Reload()
 }
 
 func (r *Root) showModal(pageName string) {
@@ -151,22 +168,26 @@ func (r *Root) hideCurrentModal() {
 }
 
 func (r *Root) sendCurrentRequest() {
+	if r.state.ActiveItem == nil {
+		return
+	}
+
+	item := r.state.ActiveItem
 	client := network.NewClient()
 
-	uri, err := url.Parse(r.state.URL)
+	uri, err := url.Parse(item.URL())
 	if err != nil {
 		fmt.Printf("Shit: %+v\n", err)
 		return // FIXME
 	}
 
-	res, err := client.Exchange(r.state.Method, uri, r.state.RequestBody)
+	res, err := client.Exchange(item.Method(), uri, item.RequestBody())
 	if err != nil {
 		fmt.Printf("Shit: %+v\n", err)
 		return // FIXME
 	}
 
-	r.state.Response = res
+	item.SetResponse(res)
 	r.state.LastError = err
-
-	r.content.SetResponse(res)
+	r.content.Reload()
 }

@@ -26,6 +26,12 @@ func NewURLBox(state *state.AppState) *URLBox {
 	return u
 }
 
+// Reload refreshes the state of the URL box component with current app state.
+func (u *URLBox) Reload() {
+	u.method.SetCurrentOption(u.currentMethod())
+	u.url.SetText(u.state.ActiveItem.URL())
+}
+
 // Widget returns a primitive widget containing this component.
 func (u *URLBox) Widget() *tview.Flex {
 	return u.flex
@@ -35,6 +41,7 @@ func (u *URLBox) build() {
 	curMethod := u.currentMethod()
 
 	u.flex = tview.NewFlex()
+	u.flex.SetTitle(u.title())
 	u.flex.SetBorder(true)
 	u.flex.SetDirection(tview.FlexColumn)
 
@@ -53,9 +60,21 @@ func (u *URLBox) build() {
 	u.flex.AddItem(u.url, 0, 1, false)
 }
 
+func (u *URLBox) title() string {
+	if selected := u.state.SelectedItem; selected != nil {
+		return selected.Name()
+	}
+
+	return ""
+}
+
 func (u *URLBox) currentMethod() int {
+	if u.state.ActiveItem == nil {
+		return -1
+	}
+
 	for i, method := range u.allowedMethods {
-		if method == u.state.Method {
+		if method == u.state.ActiveItem.Method() {
 			return i
 		}
 	}
@@ -64,9 +83,9 @@ func (u *URLBox) currentMethod() int {
 }
 
 func (u *URLBox) handleMethodChanged(text string, index int) {
-	u.state.Method = text
+	u.state.ActiveItem.SetMethod(text)
 }
 
 func (u *URLBox) handleURLChanged(text string) {
-	u.state.URL = text
+	u.state.ActiveItem.SetURL(text)
 }

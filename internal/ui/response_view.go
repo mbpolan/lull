@@ -5,7 +5,6 @@ import (
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
 	"io"
-	"net/http"
 )
 
 // ResponseView is a component that allows viewing HTTP response attributes.
@@ -24,6 +23,32 @@ func NewResponseView(title string, state *state.AppState) *ResponseView {
 	v.build(title)
 
 	return v
+}
+
+// Reload refreshes the state of the component with current app state.
+func (p *ResponseView) Reload() {
+	if p.state.ActiveItem == nil {
+		return
+	}
+
+	res := p.state.ActiveItem.Response()
+
+	if res == nil {
+		p.status.SetText("")
+		p.body.SetText("")
+	} else {
+		data, err := io.ReadAll(res.Body)
+
+		var body string
+		if err != nil {
+			body = fmt.Sprintf("[red]%+v", err)
+		} else {
+			body = string(data)
+		}
+
+		p.status.SetText(p.statusLine(res.StatusCode, res.Status))
+		p.body.SetText(body)
+	}
 }
 
 // Widget returns a primitive widget containing this component.
@@ -46,25 +71,6 @@ func (p *ResponseView) build(title string) {
 
 	p.body = tview.NewTextView()
 	p.pages.AddAndSwitchToPage("body", p.body, true)
-}
-
-func (p *ResponseView) SetResponse(res *http.Response) {
-	if res == nil {
-		p.status.SetText("")
-		p.body.SetText("")
-	} else {
-		data, err := io.ReadAll(res.Body)
-
-		var body string
-		if err != nil {
-			body = fmt.Sprintf("[red]%+v", err)
-		} else {
-			body = string(data)
-		}
-
-		p.status.SetText(p.statusLine(res.StatusCode, res.Status))
-		p.body.SetText(body)
-	}
 }
 
 func (p *ResponseView) statusLine(code int, status string) string {

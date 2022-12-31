@@ -1,16 +1,21 @@
 package state
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"net/http"
+)
 
 // CollectionItem is a grouping or a single, saved REST API request with a given name.
 type CollectionItem struct {
-	uuid     uuid.UUID
-	isGroup  bool
-	name     string
-	method   string
-	url      string
-	parent   *CollectionItem
-	children []*CollectionItem
+	uuid        uuid.UUID
+	isGroup     bool
+	name        string
+	method      string
+	url         string
+	requestBody string
+	response    *http.Response
+	parent      *CollectionItem
+	children    []*CollectionItem
 }
 
 // NewCollectionGroup returns a CollectionGroup with a given name and no children. An optional parent may be provided
@@ -43,6 +48,38 @@ func NewCollectionRequest(name, method string, url string, parent *CollectionIte
 // Name returns the labe associated with this item.
 func (c *CollectionItem) Name() string {
 	return c.name
+}
+
+func (c *CollectionItem) Method() string {
+	return c.method
+}
+
+func (c *CollectionItem) SetURL(url string) {
+	c.url = url
+}
+
+func (c *CollectionItem) URL() string {
+	return c.url
+}
+
+func (c *CollectionItem) RequestBody() string {
+	return c.requestBody
+}
+
+func (c *CollectionItem) SetRequestBody(body string) {
+	c.requestBody = body
+}
+
+func (c *CollectionItem) SetMethod(method string) {
+	c.method = method
+}
+
+func (c *CollectionItem) Response() *http.Response {
+	return c.response
+}
+
+func (c *CollectionItem) SetResponse(res *http.Response) {
+	c.response = res
 }
 
 // IsGroup returns true if this item is a CollectionGroup, or false if it's a CollectionRequest item.

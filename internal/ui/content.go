@@ -3,7 +3,6 @@ package ui
 import (
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
-	"net/http"
 )
 
 // Content provides a view that shows a request, response and URL input box.
@@ -29,6 +28,13 @@ func NewContent(state *state.AppState) *Content {
 	c.build()
 
 	return c
+}
+
+// Reload refreshes the state of the component with current app state.
+func (c *Content) Reload() {
+	c.url.Reload()
+	c.request.Reload()
+	c.response.Reload()
 }
 
 // Widget returns a primitive widget containing this component.
@@ -58,8 +64,4 @@ func (c *Content) build() {
 	c.flex.SetDirection(tview.FlexRow)
 	c.flex.AddItem(c.url.Widget(), 3, 0, true)
 	c.flex.AddItem(split, 0, 5, false)
-}
-
-func (c *Content) SetResponse(res *http.Response) {
-	c.response.SetResponse(res)
 }
