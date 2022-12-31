@@ -25,16 +25,16 @@ type Root struct {
 	collection       *Collection
 	content          *Content
 	currentModal     string
-	state            *state.AppState
+	state            *state.Manager
 }
 
 // NewRoot returns a new Root instance.
-func NewRoot(app *tview.Application) *Root {
+func NewRoot(app *tview.Application, stateManager *state.Manager) *Root {
 	application = app
 
 	r := new(Root)
 	r.currentModal = ""
-	r.state = state.NewAppState()
+	r.state = stateManager
 	r.build()
 
 	return r
@@ -92,6 +92,8 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 		r.sendCurrentRequest()
 	case tcell.KeyCtrlS:
 		r.showSaveCurrentRequest()
+	case tcell.KeyCtrlQ:
+		application.Stop()
 	default:
 		return false
 	}
@@ -100,15 +102,15 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 }
 
 func (r *Root) pathToSelectedCollectionItemGroup() []*state.CollectionItem {
-	item := r.state.SelectedItem
-	if r.state.SelectedItem == nil {
+	item := r.state.Get().SelectedItem
+	if item == nil {
 		// really shouldn't happen; default to collection root
-		item = r.state.Collection
+		item = r.state.Get().Collection
 	}
 
 	// if this item is not a group, select its parent
-	if !item.IsGroup() {
-		item = item.Parent()
+	if !item.IsGroup {
+		item = item.Parent
 	}
 
 	return append(item.Ancestors(), item)
@@ -119,7 +121,7 @@ func (r *Root) showSaveCurrentRequest() {
 	ancestors := r.pathToSelectedCollectionItemGroup()
 	path := make([]string, len(ancestors))
 	for _, i := range ancestors {
-		path = append(path, i.Name())
+		path = append(path, i.Name)
 	}
 
 	r.saveRequestModal.SetPathText(strings.Join(path, " > "))
@@ -127,18 +129,18 @@ func (r *Root) showSaveCurrentRequest() {
 }
 
 func (r *Root) handleSaveCurrentRequest(name string) {
-	if r.state.ActiveItem == nil {
+	active := r.state.Get().ActiveItem
+	if active == nil {
 		return
 	}
 
-	active := r.state.ActiveItem
 	path := r.pathToSelectedCollectionItemGroup()
 	leaf := path[len(path)-1]
 
 	// collect current request information and add it to the collection
-	item := state.NewCollectionRequest(name, active.Method(), active.URL(), leaf)
-	item.SetRequestBody(active.RequestBody())
-	item.SetResponse(active.Response())
+	item := state.NewCollectionRequest(name, active.Method, active.URL, leaf)
+	item.RequestBody = active.RequestBody
+	item.Response = active.Response
 	leaf.AddChild(item)
 
 	r.collection.Reload()
@@ -146,12 +148,12 @@ func (r *Root) handleSaveCurrentRequest(name string) {
 }
 
 func (r *Root) setCurrentRequest(item *state.CollectionItem) {
-	if r.state.ActiveItem == item {
+	if r.state.Get().ActiveItem == item {
 		return
 	}
 
 	// reload views to synchronize with app state
-	r.state.ActiveItem = item
+	r.state.Get().ActiveItem = item
 	r.content.Reload()
 }
 
@@ -168,26 +170,26 @@ func (r *Root) hideCurrentModal() {
 }
 
 func (r *Root) sendCurrentRequest() {
-	if r.state.ActiveItem == nil {
+	item := r.state.Get().ActiveItem
+	if item == nil {
 		return
 	}
 
-	item := r.state.ActiveItem
 	client := network.NewClient()
 
-	uri, err := url.Parse(item.URL())
+	uri, err := url.Parse(item.URL)
 	if err != nil {
 		fmt.Printf("Shit: %+v\n", err)
 		return // FIXME
 	}
 
-	res, err := client.Exchange(item.Method(), uri, item.RequestBody())
+	res, err := client.Exchange(item.Method, uri, item.RequestBody)
 	if err != nil {
 		fmt.Printf("Shit: %+v\n", err)
 		return // FIXME
 	}
 
-	item.SetResponse(res)
-	r.state.LastError = err
+	item.Response = res
+	r.state.Get().LastError = err
 	r.content.Reload()
 }

@@ -13,11 +13,11 @@ type ResponseView struct {
 	pages  *tview.Pages
 	status *tview.TextView
 	body   *tview.TextView
-	state  *state.AppState
+	state  *state.Manager
 }
 
 // NewResponseView returns a new instance of ResponseView.
-func NewResponseView(title string, state *state.AppState) *ResponseView {
+func NewResponseView(title string, state *state.Manager) *ResponseView {
 	v := new(ResponseView)
 	v.state = state
 	v.build(title)
@@ -27,11 +27,12 @@ func NewResponseView(title string, state *state.AppState) *ResponseView {
 
 // Reload refreshes the state of the component with current app state.
 func (p *ResponseView) Reload() {
-	if p.state.ActiveItem == nil {
+	item := p.state.Get().ActiveItem
+	if item == nil {
 		return
 	}
 
-	res := p.state.ActiveItem.Response()
+	res := item.Response
 
 	if res == nil {
 		p.status.SetText("")

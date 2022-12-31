@@ -10,11 +10,11 @@ type RequestView struct {
 	flex  *tview.Flex
 	pages *tview.Pages
 	body  *tview.TextArea
-	state *state.AppState
+	state *state.Manager
 }
 
 // NewRequestView returns a new instance of RequestView.
-func NewRequestView(title string, state *state.AppState) *RequestView {
+func NewRequestView(title string, state *state.Manager) *RequestView {
 	p := new(RequestView)
 	p.state = state
 	p.build(title)
@@ -24,11 +24,12 @@ func NewRequestView(title string, state *state.AppState) *RequestView {
 
 // Reload refreshes the state of the component with current app state.
 func (p *RequestView) Reload() {
-	if p.state.ActiveItem == nil {
+	item := p.state.Get().ActiveItem
+	if item == nil {
 		return
 	}
 
-	p.body.SetText(p.state.ActiveItem.RequestBody(), false)
+	p.body.SetText(item.RequestBody, false)
 }
 
 // Widget returns a primitive widget containing this component.
@@ -50,10 +51,10 @@ func (p *RequestView) build(title string) {
 }
 
 func (p *RequestView) handleBodyChange() {
-	if p.state.ActiveItem == nil {
+	item := p.state.Get().ActiveItem
+	if item == nil {
 		return
 	}
 
-	p.state.ActiveItem.SetRequestBody(p.body.GetText())
+	item.RequestBody = p.body.GetText()
 }
-

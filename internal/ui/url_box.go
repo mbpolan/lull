@@ -13,11 +13,11 @@ type URLBox struct {
 	url            *tview.InputField
 	focusManager   *util.FocusManager
 	allowedMethods []string
-	state          *state.AppState
+	state          *state.Manager
 }
 
 // NewURLBox returns a new instance of URLBox.
-func NewURLBox(state *state.AppState) *URLBox {
+func NewURLBox(state *state.Manager) *URLBox {
 	u := new(URLBox)
 	u.state = state
 	u.allowedMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
@@ -28,8 +28,13 @@ func NewURLBox(state *state.AppState) *URLBox {
 
 // Reload refreshes the state of the URL box component with current app state.
 func (u *URLBox) Reload() {
+	item := u.state.Get().ActiveItem
+	if item == nil {
+		return
+	}
+
 	u.method.SetCurrentOption(u.currentMethod())
-	u.url.SetText(u.state.ActiveItem.URL())
+	u.url.SetText(item.URL)
 }
 
 // Widget returns a primitive widget containing this component.
@@ -61,20 +66,21 @@ func (u *URLBox) build() {
 }
 
 func (u *URLBox) title() string {
-	if selected := u.state.SelectedItem; selected != nil {
-		return selected.Name()
+	if selected := u.state.Get().SelectedItem; selected != nil {
+		return selected.Name
 	}
 
 	return ""
 }
 
 func (u *URLBox) currentMethod() int {
-	if u.state.ActiveItem == nil {
+	item := u.state.Get().ActiveItem
+	if item == nil {
 		return -1
 	}
 
 	for i, method := range u.allowedMethods {
-		if method == u.state.ActiveItem.Method() {
+		if method == item.Method {
 			return i
 		}
 	}
@@ -83,9 +89,19 @@ func (u *URLBox) currentMethod() int {
 }
 
 func (u *URLBox) handleMethodChanged(text string, index int) {
-	u.state.ActiveItem.SetMethod(text)
+	item := u.state.Get().ActiveItem
+	if item == nil {
+		return
+	}
+
+	item.Method = text
 }
 
 func (u *URLBox) handleURLChanged(text string) {
-	u.state.ActiveItem.SetURL(text)
+	item := u.state.Get().ActiveItem
+	if item == nil {
+		return
+	}
+
+	item.URL = text
 }

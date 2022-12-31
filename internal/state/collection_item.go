@@ -7,26 +7,26 @@ import (
 
 // CollectionItem is a grouping or a single, saved REST API request with a given name.
 type CollectionItem struct {
-	uuid        uuid.UUID
-	isGroup     bool
-	name        string
-	method      string
-	url         string
-	requestBody string
-	response    *http.Response
-	parent      *CollectionItem
-	children    []*CollectionItem
+	UUID        uuid.UUID
+	IsGroup     bool
+	Name        string
+	Method      string
+	URL         string
+	RequestBody string
+	Response    *http.Response
+	Parent      *CollectionItem `json:"-"` // prepare circular references when serializing
+	Children    []*CollectionItem
 }
 
 // NewCollectionGroup returns a CollectionGroup with a given name and no children. An optional parent may be provided
 // to make this group a child of that item.
 func NewCollectionGroup(name string, parent *CollectionItem) *CollectionItem {
 	g := new(CollectionItem)
-	g.uuid = uuid.New()
-	g.isGroup = true
-	g.name = name
-	g.parent = parent
-	g.children = []*CollectionItem{}
+	g.UUID = uuid.New()
+	g.IsGroup = true
+	g.Name = name
+	g.Parent = parent
+	g.Children = []*CollectionItem{}
 
 	return g
 }
@@ -35,77 +35,24 @@ func NewCollectionGroup(name string, parent *CollectionItem) *CollectionItem {
 // // to make this item a child of that item.
 func NewCollectionRequest(name, method string, url string, parent *CollectionItem) *CollectionItem {
 	r := new(CollectionItem)
-	r.uuid = uuid.New()
-	r.isGroup = false
-	r.name = name
-	r.method = method
-	r.url = url
-	r.parent = parent
+	r.UUID = uuid.New()
+	r.IsGroup = false
+	r.Name = name
+	r.Method = method
+	r.URL = url
+	r.Parent = parent
 
 	return r
-}
-
-// Name returns the labe associated with this item.
-func (c *CollectionItem) Name() string {
-	return c.name
-}
-
-func (c *CollectionItem) Method() string {
-	return c.method
-}
-
-func (c *CollectionItem) SetURL(url string) {
-	c.url = url
-}
-
-func (c *CollectionItem) URL() string {
-	return c.url
-}
-
-func (c *CollectionItem) RequestBody() string {
-	return c.requestBody
-}
-
-func (c *CollectionItem) SetRequestBody(body string) {
-	c.requestBody = body
-}
-
-func (c *CollectionItem) SetMethod(method string) {
-	c.method = method
-}
-
-func (c *CollectionItem) Response() *http.Response {
-	return c.response
-}
-
-func (c *CollectionItem) SetResponse(res *http.Response) {
-	c.response = res
-}
-
-// IsGroup returns true if this item is a CollectionGroup, or false if it's a CollectionRequest item.
-func (c *CollectionItem) IsGroup() bool {
-	return c.isGroup
-}
-
-// Parent returns the item that is the direct parent of this item, or nil if there is none.
-func (c *CollectionItem) Parent() *CollectionItem {
-	return c.parent
-}
-
-// Children returns the list of child items under this item. If this item is not a group (isGroup() returns false),
-// then this method returns nil.
-func (c *CollectionItem) Children() []*CollectionItem {
-	return c.children
 }
 
 // AddChild appends an item to the end of this item's children. If this item is not a group (isGroup() returns false),
 // then this method does nothing.
 func (c *CollectionItem) AddChild(item *CollectionItem) {
-	if !c.isGroup {
+	if !c.IsGroup {
 		return
 	}
 
-	c.children = append(c.children, item)
+	c.Children = append(c.Children, item)
 }
 
 // Ancestors returns the collection items that form a path to this item. The list will be ordered by most distant to
@@ -113,10 +60,10 @@ func (c *CollectionItem) AddChild(item *CollectionItem) {
 func (c *CollectionItem) Ancestors() []*CollectionItem {
 	var ancestors []*CollectionItem
 
-	node := c.parent
+	node := c.Parent
 	for node != nil {
 		ancestors = append(ancestors, node)
-		node = node.parent
+		node = node.Parent
 	}
 
 	reversed := make([]*CollectionItem, len(ancestors))

@@ -11,7 +11,7 @@ type Content struct {
 	url      *URLBox
 	request  *RequestView
 	response *ResponseView
-	state    *state.AppState
+	state    *state.Manager
 }
 
 type ContentWidget int16
@@ -22,7 +22,7 @@ const (
 )
 
 // NewContent returns a new Content instance.
-func NewContent(state *state.AppState) *Content {
+func NewContent(state *state.Manager) *Content {
 	c := new(Content)
 	c.state = state
 	c.build()

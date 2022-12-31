@@ -10,12 +10,12 @@ type ActiveNodeHandler func(item *state.CollectionItem)
 // Collection is a view that shows saved API requests.
 type Collection struct {
 	tree     *tview.TreeView
-	state    *state.AppState
+	state    *state.Manager
 	onActive ActiveNodeHandler
 }
 
 // NewCollection returns a new instance of Collection.
-func NewCollection(state *state.AppState) *Collection {
+func NewCollection(state *state.Manager) *Collection {
 	p := new(Collection)
 	p.state = state
 	p.build()
@@ -37,11 +37,11 @@ func (p *Collection) Widget() *tview.TreeView {
 // item will be selected once again after reloading data if it still exists. If it doesn't exist anymore, the root
 // item will be selected.
 func (p *Collection) Reload() {
-	root := p.buildTreeNodes(p.state.Collection)
+	root := p.buildTreeNodes(p.state.Get().Collection)
 	p.tree.SetRoot(root)
 
 	// select the previously selected item, if it still exists
-	selected := p.findNodeForItem(root, p.state.SelectedItem)
+	selected := p.findNodeForItem(root, p.state.Get().SelectedItem)
 	if selected == nil {
 		p.tree.SetCurrentNode(root)
 	} else {
@@ -49,7 +49,7 @@ func (p *Collection) Reload() {
 	}
 
 	// set the previously active node
-	if active := p.findNodeForItem(root, p.state.ActiveItem); active != nil {
+	if active := p.findNodeForItem(root, p.state.Get().ActiveItem); active != nil {
 		p.setNodeActive(active, false)
 	}
 }
@@ -75,12 +75,12 @@ func (p *Collection) build() {
 func (p *Collection) setNodeActive(node *tview.TreeNode, fireCallback bool) {
 	// prevent activating group node
 	item := node.GetReference().(*state.CollectionItem)
-	if item.IsGroup() {
+	if item.IsGroup {
 		return
 	}
 
 	// restore the color on the previously active node
-	if previous := p.findNodeForItem(p.tree.GetRoot(), p.state.ActiveItem); previous != nil {
+	if previous := p.findNodeForItem(p.tree.GetRoot(), p.state.Get().ActiveItem); previous != nil {
 		previous.SetColor(tview.Styles.PrimaryTextColor)
 	}
 
@@ -92,11 +92,11 @@ func (p *Collection) setNodeActive(node *tview.TreeNode, fireCallback bool) {
 }
 
 func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode {
-	node := tview.NewTreeNode(item.Name())
+	node := tview.NewTreeNode(item.Name)
 	node.SetReference(item)
 
-	if item.IsGroup() {
-		for _, c := range item.Children() {
+	if item.IsGroup {
+		for _, c := range item.Children {
 			node.AddChild(p.buildTreeNodes(c))
 		}
 	}
