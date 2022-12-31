@@ -13,7 +13,7 @@ type CollectionItem struct {
 	Method      string
 	URL         string
 	RequestBody string
-	Response    *http.Response
+	Response    *http.Response  `json:"-"` // do not serialize
 	Parent      *CollectionItem `json:"-"` // prepare circular references when serializing
 	Children    []*CollectionItem
 }

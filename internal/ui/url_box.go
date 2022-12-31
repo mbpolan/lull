@@ -43,6 +43,7 @@ func (u *URLBox) Widget() *tview.Flex {
 }
 
 func (u *URLBox) build() {
+	curURL := u.currentURL()
 	curMethod := u.currentMethod()
 
 	u.flex = tview.NewFlex()
@@ -55,6 +56,7 @@ func (u *URLBox) build() {
 	u.method.SetCurrentOption(curMethod)
 
 	u.url = tview.NewInputField()
+	u.url.SetText(curURL)
 	u.url.SetChangedFunc(u.handleURLChanged)
 
 	u.focusManager = util.NewFocusManager(GetApplication(), []tview.Primitive{u.method, u.url})
@@ -71,6 +73,15 @@ func (u *URLBox) title() string {
 	}
 
 	return ""
+}
+
+func (u *URLBox) currentURL() string {
+	item := u.state.Get().ActiveItem
+	if item == nil {
+		return ""
+	}
+
+	return item.URL
 }
 
 func (u *URLBox) currentMethod() int {
@@ -95,6 +106,7 @@ func (u *URLBox) handleMethodChanged(text string, index int) {
 	}
 
 	item.Method = text
+	u.state.SetDirty()
 }
 
 func (u *URLBox) handleURLChanged(text string) {
@@ -104,4 +116,5 @@ func (u *URLBox) handleURLChanged(text string) {
 	}
 
 	item.URL = text
+	u.state.SetDirty()
 }

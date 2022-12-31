@@ -145,6 +145,8 @@ func (r *Root) handleSaveCurrentRequest(name string) {
 
 	r.collection.Reload()
 	r.hideCurrentModal()
+
+	r.state.SetDirty()
 }
 
 func (r *Root) setCurrentRequest(item *state.CollectionItem) {
@@ -155,6 +157,7 @@ func (r *Root) setCurrentRequest(item *state.CollectionItem) {
 	// reload views to synchronize with app state
 	r.state.Get().ActiveItem = item
 	r.content.Reload()
+	r.state.SetDirty()
 }
 
 func (r *Root) showModal(pageName string) {
@@ -192,4 +195,5 @@ func (r *Root) sendCurrentRequest() {
 	item.Response = res
 	r.state.Get().LastError = err
 	r.content.Reload()
+	r.state.SetDirty()
 }

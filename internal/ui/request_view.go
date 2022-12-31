@@ -38,6 +38,8 @@ func (p *RequestView) Widget() *tview.Flex {
 }
 
 func (p *RequestView) build(title string) {
+	curBody := p.currentRequestBody()
+
 	p.flex = tview.NewFlex()
 	p.flex.SetBorder(true)
 	p.flex.SetTitle(title)
@@ -46,8 +48,19 @@ func (p *RequestView) build(title string) {
 	p.flex.AddItem(p.pages, 0, 1, true)
 
 	p.body = tview.NewTextArea()
+	p.body.SetText(curBody, false)
 	p.body.SetChangedFunc(p.handleBodyChange)
+
 	p.pages.AddAndSwitchToPage("body", p.body, true)
+}
+
+func (p *RequestView) currentRequestBody() string {
+	item := p.state.Get().ActiveItem
+	if item == nil {
+		return ""
+	}
+
+	return item.RequestBody
 }
 
 func (p *RequestView) handleBodyChange() {
