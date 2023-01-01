@@ -33,6 +33,7 @@ func (u *URLBox) Reload() {
 		return
 	}
 
+	u.flex.SetTitle(u.title())
 	u.method.SetCurrentOption(u.currentMethod())
 	u.url.SetText(item.URL)
 }

@@ -1,17 +1,20 @@
 package ui
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
 )
 
 type ActiveNodeHandler func(item *state.CollectionItem)
+type RenameItemHandler func(item *state.CollectionItem)
 
 // Collection is a view that shows saved API requests.
 type Collection struct {
 	tree     *tview.TreeView
 	state    *state.Manager
 	onActive ActiveNodeHandler
+	onRename RenameItemHandler
 }
 
 // NewCollection returns a new instance of Collection.
@@ -26,6 +29,11 @@ func NewCollection(state *state.Manager) *Collection {
 // SetItemActivatedHandler sets the callback to invoke when an item is activated in the tree.
 func (p *Collection) SetItemActivatedHandler(handler ActiveNodeHandler) {
 	p.onActive = handler
+}
+
+// SetItemRenameHandler sets the callback to invoke when an item should be renamed.
+func (p *Collection) SetItemRenameHandler(handler RenameItemHandler) {
+	p.onRename = handler
 }
 
 // Widget returns a primitive widget containing this component.
@@ -59,6 +67,7 @@ func (p *Collection) SetFocus() {
 	GetApplication().SetFocus(p.tree)
 }
 
+// build creates the layout and child components.
 func (p *Collection) build() {
 	p.tree = tview.NewTreeView()
 	p.tree.SetTitle("Collection")
@@ -66,6 +75,8 @@ func (p *Collection) build() {
 	p.tree.SetSelectedFunc(func(node *tview.TreeNode) {
 		p.setNodeActive(node, true)
 	})
+
+	p.tree.SetInputCapture(p.handleKeyEvent)
 
 	p.Reload()
 }
@@ -91,6 +102,7 @@ func (p *Collection) setNodeActive(node *tview.TreeNode, fireCallback bool) {
 	}
 }
 
+// buildTreeNodes constructs a tree of tview.TreeNode objects corresponding to the items in our collection.
 func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode {
 	node := tview.NewTreeNode(item.Name)
 	node.SetReference(item)
@@ -104,6 +116,7 @@ func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode 
 	return node
 }
 
+// findNodeForItem returns the tview.TreeNode that contains a reference to the given state.CollectionItem.
 func (p *Collection) findNodeForItem(node *tview.TreeNode, item *state.CollectionItem) *tview.TreeNode {
 	if node == nil {
 		return nil
@@ -123,4 +136,16 @@ func (p *Collection) findNodeForItem(node *tview.TreeNode, item *state.Collectio
 	}
 
 	return nil
+}
+
+func (p *Collection) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
+	if event.Rune() == 'r' {
+		if p.onRename != nil && p.state.Get().SelectedItem != nil {
+			p.onRename(p.state.Get().SelectedItem)
+		}
+
+		return nil
+	}
+
+	return event
 }

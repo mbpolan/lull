@@ -13,20 +13,19 @@ import (
 var application *tview.Application
 
 const (
-	rootPageMain             string = "main"
-	rootPageSaveRequestModal        = "saveRequestModal"
+	rootPageMain  string = "main"
+	rootPageModal string = "modal"
 )
 
 // Root is a top-level container for all application UI components.
 type Root struct {
-	pages            *tview.Pages
-	flex             *tview.Flex
-	saveRequestModal *SaveRequestModal
-	collection       *Collection
-	content          *Content
-	StatusBar        *StatusBar
-	currentModal     string
-	state            *state.Manager
+	pages        *tview.Pages
+	flex         *tview.Flex
+	collection   *Collection
+	content      *Content
+	StatusBar    *StatusBar
+	currentModal string
+	state        *state.Manager
 }
 
 // NewRoot returns a new Root instance.
@@ -57,6 +56,7 @@ func (r *Root) build() {
 	// create child widgets
 	r.collection = NewCollection(r.state)
 	r.collection.SetItemActivatedHandler(r.setCurrentRequest)
+	r.collection.SetItemRenameHandler(r.handleRenameSelectedItem)
 	r.content = NewContent(r.state)
 	r.StatusBar = NewStatusBar()
 
@@ -81,11 +81,8 @@ func (r *Root) build() {
 		return event
 	})
 
-	r.saveRequestModal = NewSaveRequestModal(r.handleSaveCurrentRequest, r.hideCurrentModal)
-
 	// create pages containing the main content and various modals that can be opened
 	r.pages.AddAndSwitchToPage(rootPageMain, r.flex, true)
-	r.pages.AddPage(rootPageSaveRequestModal, r.saveRequestModal.Widget(), true, false)
 }
 
 func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
@@ -124,6 +121,27 @@ func (r *Root) pathToSelectedCollectionItemGroup() []*state.CollectionItem {
 	return append(item.Ancestors(), item)
 }
 
+func (r *Root) handleRenameSelectedItem(item *state.CollectionItem) {
+	text := fmt.Sprintf("Current request name: [blue]%s", item.Name)
+	m := NewTextInputModal("Rename Item", text, "New Name", r.renameSelectedItem, r.hideCurrentModal)
+
+	r.showModal(m.Widget())
+}
+
+func (r *Root) renameSelectedItem(text string) {
+	item := r.state.Get().SelectedItem
+	if item == nil {
+		return
+	}
+
+	// rename this item and reload our content
+	item.Name = text
+	r.collection.Reload()
+	r.content.Reload()
+
+	r.hideCurrentModal()
+}
+
 func (r *Root) showSaveCurrentRequest() {
 	// collect ancestors and form a path
 	ancestors := r.pathToSelectedCollectionItemGroup()
@@ -132,8 +150,9 @@ func (r *Root) showSaveCurrentRequest() {
 		path = append(path, i.Name)
 	}
 
-	r.saveRequestModal.SetPathText(strings.Join(path, " > "))
-	r.showModal(rootPageSaveRequestModal)
+	text := fmt.Sprintf("Request will be saved under [yellow]%s", strings.Join(path, " > "))
+	m := NewTextInputModal("Save Request", text, "Name", r.handleSaveCurrentRequest, r.hideCurrentModal)
+	r.showModal(m.Widget())
 }
 
 func (r *Root) handleSaveCurrentRequest(name string) {
@@ -168,16 +187,12 @@ func (r *Root) setCurrentRequest(item *state.CollectionItem) {
 	r.state.SetDirty()
 }
 
-func (r *Root) showModal(pageName string) {
-	r.currentModal = pageName
-	r.pages.ShowPage(pageName)
+func (r *Root) showModal(modal tview.Primitive) {
+	r.pages.AddAndSwitchToPage(rootPageModal, modal, true)
 }
 
 func (r *Root) hideCurrentModal() {
-	if r.currentModal != "" {
-		r.pages.HidePage(r.currentModal)
-		r.currentModal = ""
-	}
+	r.pages.RemovePage(rootPageModal)
 }
 
 func (r *Root) sendCurrentRequest() {

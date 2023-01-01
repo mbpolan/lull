@@ -2,6 +2,12 @@ package ui
 
 import "github.com/rivo/tview"
 
+// ModalTextAcceptHandler is a standard callback for a modal that accepts a line of text as input.
+type ModalTextAcceptHandler func(text string)
+
+// ModalRejectHandler is a standard callback for when a modal is cancelled.
+type ModalRejectHandler func()
+
 // Modal is a container that presents components in a modal window.
 type Modal struct {
 	flex *tview.Flex
