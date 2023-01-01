@@ -49,7 +49,7 @@ func (m *BaseInputModal) build(title string, text string, accept func()) int {
 }
 
 func (m *BaseInputModal) buildButtons(row int) {
-	m.grid.AddItem(m.ok, row, 0, 1, 1, 0, 0, false)
+	m.grid.AddItem(m.ok, row, 0, 1, 1, 0, 0, true)
 	m.grid.AddItem(m.cancel, row, 1, 1, 1, 0, 0, false)
 }
 

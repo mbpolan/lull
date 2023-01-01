@@ -57,6 +57,7 @@ func (r *Root) build() {
 	r.collection = NewCollection(r.state)
 	r.collection.SetItemActivatedHandler(r.setCurrentRequest)
 	r.collection.SetItemRenameHandler(r.handleRenameSelectedItem)
+	r.collection.SetItemDeleteHandler(r.handleDeleteSelectedItem)
 	r.content = NewContent(r.state)
 	r.StatusBar = NewStatusBar()
 
@@ -122,10 +123,50 @@ func (r *Root) pathToSelectedCollectionItemGroup() []*state.CollectionItem {
 }
 
 func (r *Root) handleRenameSelectedItem(item *state.CollectionItem) {
-	text := fmt.Sprintf("Current request name: [blue]%s", item.Name)
+	text := fmt.Sprintf("Current request name: [yellow]%s", item.Name)
 	m := NewTextInputModal("Rename Item", text, "New Name", r.renameSelectedItem, r.hideCurrentModal)
 
 	r.showModal(m.Widget())
+}
+
+func (r *Root) handleDeleteSelectedItem(item *state.CollectionItem) {
+	text := fmt.Sprintf("Are you sure you want to delete [yellow]%s?", item.Name)
+	m := NewPromptModal("Delete Item", text, r.deleteSelectedItem, r.hideCurrentModal)
+
+	r.showModal(m.Widget())
+}
+
+func (r *Root) deleteSelectedItem() {
+	item := r.state.Get().SelectedItem
+	if item == nil {
+		return
+	}
+
+	// remove this item from the collection
+	r.state.Get().RemoveCollectionItem(item)
+
+	// find another item to select
+	candidate := r.state.Get().FirstCollectionItem(func(i *state.CollectionItem) bool {
+		return !i.IsGroup
+	})
+
+	// if there are no other items to activate, create a new one first
+	if candidate == nil {
+		candidate = state.NewCollectionRequest("Unnamed", "GET", "", r.state.Get().Collection)
+		r.state.Get().Collection.AddChild(candidate)
+	}
+
+	// if we're deleting the currently active item, set it to the candidate item as well
+	// the active item will be set to nil if that's the case as a result of the call to RemoveCollectionItem above
+	if r.state.Get().ActiveItem == nil {
+		r.state.Get().ActiveItem = candidate
+		r.content.Reload()
+	}
+
+	r.state.Get().SelectedItem = candidate
+
+	r.collection.Reload()
+	r.hideCurrentModal()
 }
 
 func (r *Root) renameSelectedItem(text string) {

@@ -6,15 +6,17 @@ import (
 	"github.com/rivo/tview"
 )
 
-type ActiveNodeHandler func(item *state.CollectionItem)
+type ActivatedItemHandler func(item *state.CollectionItem)
 type RenameItemHandler func(item *state.CollectionItem)
+type DeleteItemHandler func(item *state.CollectionItem)
 
 // Collection is a view that shows saved API requests.
 type Collection struct {
 	tree     *tview.TreeView
 	state    *state.Manager
-	onActive ActiveNodeHandler
+	onActive ActivatedItemHandler
 	onRename RenameItemHandler
+	onDelete DeleteItemHandler
 }
 
 // NewCollection returns a new instance of Collection.
@@ -27,13 +29,18 @@ func NewCollection(state *state.Manager) *Collection {
 }
 
 // SetItemActivatedHandler sets the callback to invoke when an item is activated in the tree.
-func (p *Collection) SetItemActivatedHandler(handler ActiveNodeHandler) {
+func (p *Collection) SetItemActivatedHandler(handler ActivatedItemHandler) {
 	p.onActive = handler
 }
 
 // SetItemRenameHandler sets the callback to invoke when an item should be renamed.
 func (p *Collection) SetItemRenameHandler(handler RenameItemHandler) {
 	p.onRename = handler
+}
+
+// SetItemDeleteHandler sets the callback to invoke when an item should be renamed.
+func (p *Collection) SetItemDeleteHandler(handler DeleteItemHandler) {
+	p.onDelete = handler
 }
 
 // Widget returns a primitive widget containing this component.
@@ -75,6 +82,7 @@ func (p *Collection) build() {
 	p.tree.SetSelectedFunc(func(node *tview.TreeNode) {
 		p.setNodeActive(node, true)
 	})
+	p.tree.SetChangedFunc(p.handleNodeChange)
 
 	p.tree.SetInputCapture(p.handleKeyEvent)
 
@@ -145,7 +153,22 @@ func (p *Collection) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		}
 
 		return nil
+	} else if event.Rune() == 'd' {
+		if p.onDelete != nil && p.state.Get().SelectedItem != nil {
+			p.onDelete(p.state.Get().SelectedItem)
+		}
+
+		return nil
 	}
 
 	return event
+}
+
+func (p *Collection) handleNodeChange(node *tview.TreeNode) {
+	item := node.GetReference().(*state.CollectionItem)
+	if item == nil {
+		return
+	}
+
+	p.state.Get().SelectedItem = item
 }

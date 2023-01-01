@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"net/http"
 )
@@ -53,6 +54,36 @@ func (c *CollectionItem) AddChild(item *CollectionItem) {
 	}
 
 	c.Children = append(c.Children, item)
+}
+
+// RemoveChild removes the given item from the list of children of this item. If the item cannot be removed, an
+// error will be returned.
+func (c *CollectionItem) RemoveChild(item *CollectionItem) error {
+	if !c.IsGroup {
+		return errors.New("item is not a group")
+	}
+
+	for i, child := range c.Children {
+		if child == item {
+			c.Children = append(c.Children[:i], c.Children[i+1:]...)
+			return nil
+		}
+	}
+
+	return errors.New("child not found under item")
+}
+
+// IsDescendentOf returns true if this item is a descendent of the given item.
+func (c *CollectionItem) IsDescendentOf(item *CollectionItem) bool {
+	// TODO: this can probably be more efficient by walking the tree and short-circuiting when we find a matching
+	// ancestor
+	for _, i := range c.Ancestors() {
+		if i == item {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Ancestors returns the collection items that form a path to this item. The list will be ordered by most distant to
