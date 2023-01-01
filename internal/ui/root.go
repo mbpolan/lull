@@ -24,6 +24,7 @@ type Root struct {
 	saveRequestModal *SaveRequestModal
 	collection       *Collection
 	content          *Content
+	StatusBar        *StatusBar
 	currentModal     string
 	state            *state.Manager
 }
@@ -57,11 +58,18 @@ func (r *Root) build() {
 	r.collection = NewCollection(r.state)
 	r.collection.SetItemActivatedHandler(r.setCurrentRequest)
 	r.content = NewContent(r.state)
+	r.StatusBar = NewStatusBar()
 
-	// arrange them in a flex layout
+	// arrange the collection and content in a flex layout
+	mc := tview.NewFlex()
+	mc.AddItem(r.collection.Widget(), 25, 0, false)
+	mc.AddItem(r.content.Widget(), 0, 1, true)
+
+	// arrange the main content flex layout and the status bar in a parent flex
 	r.flex = tview.NewFlex()
-	r.flex.AddItem(r.collection.Widget(), 25, 0, false)
-	r.flex.AddItem(r.content.Widget(), 0, 1, true)
+	r.flex.SetDirection(tview.FlexRow)
+	r.flex.AddItem(mc, 0, 1, true)
+	r.flex.AddItem(r.StatusBar.Widget(), 1, 0, false)
 
 	r.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers()&tcell.ModCtrl > 0 {
