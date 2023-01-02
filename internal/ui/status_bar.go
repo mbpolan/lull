@@ -69,6 +69,7 @@ func (s *StatusBar) setupForGeneral() {
 func (s *StatusBar) setupForCollection() {
 	s.flex.AddItem(s.label("Open [enter]"), 0, 1, false)
 	s.flex.AddItem(s.label("Rename [r]"), 0, 1, false)
+	s.flex.AddItem(s.label("Clone [c]"), 0, 1, false)
 	s.flex.AddItem(s.label("Delete [d]"), 0, 1, false)
 	s.flex.AddItem(s.label(""), 0, 2, false)
 }

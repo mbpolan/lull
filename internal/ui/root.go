@@ -55,9 +55,7 @@ func (r *Root) build() {
 
 	// create child widgets
 	r.collection = NewCollection(r.state)
-	r.collection.SetItemActivatedHandler(r.setCurrentRequest)
-	r.collection.SetItemRenameHandler(r.handleRenameSelectedItem)
-	r.collection.SetItemDeleteHandler(r.handleDeleteSelectedItem)
+	r.collection.SetItemActivatedHandler(r.handleCollectionItemAction)
 	r.content = NewContent(r.state)
 	r.StatusBar = NewStatusBar()
 
@@ -125,6 +123,19 @@ func (r *Root) pathToSelectedCollectionItemGroup() []*state.CollectionItem {
 	return append(item.Ancestors(), item)
 }
 
+func (r *Root) handleCollectionItemAction(action CollectionItemAction, item *state.CollectionItem) {
+	switch action {
+	case CollectionItemRename:
+		r.handleRenameSelectedItem(item)
+	case CollectionItemDelete:
+		r.handleDeleteSelectedItem(item)
+	case CollectionItemClone:
+		r.handleCloneSelectedItem(item)
+	case CollectionItemOpen:
+		r.setCurrentRequest(item)
+	}
+}
+
 func (r *Root) handleRenameSelectedItem(item *state.CollectionItem) {
 	text := fmt.Sprintf("Current request name: [yellow]%s", item.Name)
 	m := NewTextInputModal("Rename Item", text, "New Name", r.renameSelectedItem, r.hideCurrentModal)
@@ -135,6 +146,13 @@ func (r *Root) handleRenameSelectedItem(item *state.CollectionItem) {
 func (r *Root) handleDeleteSelectedItem(item *state.CollectionItem) {
 	text := fmt.Sprintf("Are you sure you want to delete [yellow]%s?", item.Name)
 	m := NewPromptModal("Delete Item", text, r.deleteSelectedItem, r.hideCurrentModal)
+
+	r.showModal(m.Widget())
+}
+
+func (r *Root) handleCloneSelectedItem(item *state.CollectionItem) {
+	text := fmt.Sprintf("Clone request [yellow]%s", item.Name)
+	m := NewTextInputModal("Clone Item", text, "Name", r.cloneSelectedItem, r.hideCurrentModal)
 
 	r.showModal(m.Widget())
 }
@@ -180,6 +198,30 @@ func (r *Root) renameSelectedItem(text string) {
 
 	// rename this item and reload our content
 	item.Name = text
+	r.collection.Reload()
+	r.content.Reload()
+
+	r.hideCurrentModal()
+}
+
+func (r *Root) cloneSelectedItem(text string) {
+	item := r.state.Get().SelectedItem
+	if item == nil {
+		return
+	}
+
+	// cloning a group item means we need to do a deep copy of all its children as well
+	if item.IsGroup {
+		// TODO
+	} else {
+		newItem := state.NewCollectionRequest(text, item.Method, item.URL, item.Parent)
+		item.Parent.InsertChildAfter(newItem, item)
+
+		// automatically select and activate the newly cloned item
+		r.state.Get().ActiveItem = newItem
+		r.state.Get().SelectedItem = newItem
+	}
+
 	r.collection.Reload()
 	r.content.Reload()
 
@@ -232,7 +274,7 @@ func (r *Root) setCurrentRequest(item *state.CollectionItem) {
 }
 
 func (r *Root) showModal(modal tview.Primitive) {
-	r.pages.AddAndSwitchToPage(rootPageModal, modal, true)
+	r.pages.AddPage(rootPageModal, modal, true, true)
 }
 
 func (r *Root) hideCurrentModal() {

@@ -6,17 +6,22 @@ import (
 	"github.com/rivo/tview"
 )
 
-type ActivatedItemHandler func(item *state.CollectionItem)
-type RenameItemHandler func(item *state.CollectionItem)
-type DeleteItemHandler func(item *state.CollectionItem)
+type CollectionItemAction int
+
+const (
+	CollectionItemOpen CollectionItemAction = iota
+	CollectionItemRename
+	CollectionItemDelete
+	CollectionItemClone
+)
+
+type CollectionItemActionHandler func(action CollectionItemAction, item *state.CollectionItem)
 
 // Collection is a view that shows saved API requests.
 type Collection struct {
 	tree     *tview.TreeView
 	state    *state.Manager
-	onActive ActivatedItemHandler
-	onRename RenameItemHandler
-	onDelete DeleteItemHandler
+	onAction CollectionItemActionHandler
 }
 
 // NewCollection returns a new instance of Collection.
@@ -28,19 +33,9 @@ func NewCollection(state *state.Manager) *Collection {
 	return p
 }
 
-// SetItemActivatedHandler sets the callback to invoke when an item is activated in the tree.
-func (p *Collection) SetItemActivatedHandler(handler ActivatedItemHandler) {
-	p.onActive = handler
-}
-
-// SetItemRenameHandler sets the callback to invoke when an item should be renamed.
-func (p *Collection) SetItemRenameHandler(handler RenameItemHandler) {
-	p.onRename = handler
-}
-
-// SetItemDeleteHandler sets the callback to invoke when an item should be renamed.
-func (p *Collection) SetItemDeleteHandler(handler DeleteItemHandler) {
-	p.onDelete = handler
+// SetItemActivatedHandler sets the callback to invoke when an action is performed on an item.
+func (p *Collection) SetItemActivatedHandler(handler CollectionItemActionHandler) {
+	p.onAction = handler
 }
 
 // Widget returns a primitive widget containing this component.
@@ -106,7 +101,7 @@ func (p *Collection) setNodeActive(node *tview.TreeNode, fireCallback bool) {
 	node.SetColor(tview.Styles.TertiaryTextColor)
 
 	if fireCallback {
-		p.onActive(item)
+		p.onAction(CollectionItemOpen, item)
 	}
 }
 
@@ -148,17 +143,21 @@ func (p *Collection) findNodeForItem(node *tview.TreeNode, item *state.Collectio
 
 func (p *Collection) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == 'r' {
-		if p.onRename != nil && p.state.Get().SelectedItem != nil {
-			p.onRename(p.state.Get().SelectedItem)
+		if p.state.Get().SelectedItem != nil {
+			p.onAction(CollectionItemRename, p.state.Get().SelectedItem)
 		}
 
 		return nil
 	} else if event.Rune() == 'd' {
-		if p.onDelete != nil && p.state.Get().SelectedItem != nil {
-			p.onDelete(p.state.Get().SelectedItem)
+		if p.state.Get().SelectedItem != nil {
+			p.onAction(CollectionItemDelete, p.state.Get().SelectedItem)
 		}
 
 		return nil
+	} else if event.Rune() == 'c' {
+		if p.state.Get().SelectedItem != nil {
+			p.onAction(CollectionItemClone, p.state.Get().SelectedItem)
+		}
 	}
 
 	return event

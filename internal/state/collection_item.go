@@ -46,7 +46,7 @@ func NewCollectionRequest(name, method string, url string, parent *CollectionIte
 	return r
 }
 
-// AddChild appends an item to the end of this item's children. If this item is not a group (isGroup() returns false),
+// AddChild appends an item to the end of this item's children. If this item is not a group (isGroup is false),
 // then this method does nothing.
 func (c *CollectionItem) AddChild(item *CollectionItem) {
 	if !c.IsGroup {
@@ -54,6 +54,31 @@ func (c *CollectionItem) AddChild(item *CollectionItem) {
 	}
 
 	c.Children = append(c.Children, item)
+}
+
+// InsertChildAfter inserts an item after the given child item. If this item is not a group (isGroup is false),
+// then this method does nothing.
+func (c *CollectionItem) InsertChildAfter(item *CollectionItem, after *CollectionItem) {
+	if !c.IsGroup {
+		return
+	}
+
+	idx := 0
+	children := make([]*CollectionItem, len(c.Children)+1)
+	for _, child := range c.Children {
+		children[idx] = child
+		idx++
+
+		if child == after {
+			children[idx] = item
+			idx++
+		}
+	}
+
+	// only set the new children slice on this item if we found the target item to insert after
+	if idx == len(children) {
+		c.Children = children
+	}
 }
 
 // RemoveChild removes the given item from the list of children of this item. If the item cannot be removed, an
