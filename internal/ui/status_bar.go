@@ -57,7 +57,12 @@ func (s *StatusBar) reload() {
 	}
 }
 
+func (s *StatusBar) addCommonLabels() {
+	s.flex.AddItem(s.label("Navigate [shift+arrow]"), 0, 1, false)
+}
+
 func (s *StatusBar) setupForGeneral() {
+	s.addCommonLabels()
 	s.flex.AddItem(s.label("Collection [ctrl+l]"), 0, 1, false)
 	s.flex.AddItem(s.label("Save Current [ctrl+s]"), 0, 1, false)
 	s.flex.AddItem(s.label("URL [ctrl+a]"), 0, 1, false)
@@ -67,6 +72,7 @@ func (s *StatusBar) setupForGeneral() {
 }
 
 func (s *StatusBar) setupForCollection() {
+	s.addCommonLabels()
 	s.flex.AddItem(s.label("Open [enter]"), 0, 1, false)
 	s.flex.AddItem(s.label("Rename [r]"), 0, 1, false)
 	s.flex.AddItem(s.label("Clone [c]"), 0, 1, false)

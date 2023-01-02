@@ -72,7 +72,11 @@ func (r *Root) build() {
 
 	r.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers()&tcell.ModCtrl > 0 {
-			if r.handleKeyAction(event.Key(), event.Rune()) {
+			if r.handleControlKeyAction(event.Key(), event.Rune()) {
+				return nil
+			}
+		} else if event.Modifiers()&tcell.ModShift == tcell.ModShift {
+			if r.handleShiftKeyAction(event.Key(), event.Rune()) {
 				return nil
 			}
 		}
@@ -84,7 +88,7 @@ func (r *Root) build() {
 	r.pages.AddAndSwitchToPage(rootPageMain, r.flex, true)
 }
 
-func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
+func (r *Root) handleControlKeyAction(code tcell.Key, key rune) bool {
 	switch code {
 	case tcell.KeyCtrlL:
 		r.collection.SetFocus()
@@ -101,6 +105,25 @@ func (r *Root) handleKeyAction(code tcell.Key, key rune) bool {
 		r.showSaveCurrentRequest()
 	case tcell.KeyCtrlQ:
 		application.Stop()
+	default:
+		return false
+	}
+
+	return true
+}
+
+func (r *Root) handleShiftKeyAction(code tcell.Key, key rune) bool {
+	switch code {
+	case tcell.KeyRight:
+		if !r.content.Widget().HasFocus() {
+			r.content.SetFocus(ContentURLBox)
+			r.StatusBar.SetLayout(StatusBarLayoutGeneral)
+		}
+	case tcell.KeyLeft:
+		if !r.collection.Widget().HasFocus() {
+			r.collection.SetFocus()
+			r.StatusBar.SetLayout(StatusBarLayoutCollection)
+		}
 	default:
 		return false
 	}

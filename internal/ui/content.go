@@ -42,12 +42,25 @@ func (c *Content) Widget() *tview.Flex {
 	return c.flex
 }
 
+// SetFocus sets one of the content primitives to have focus.
 func (c *Content) SetFocus(widget ContentWidget) {
 	switch widget {
 	case ContentRequestBody:
 		GetApplication().SetFocus(c.request.Widget())
 	case ContentURLBox:
 		GetApplication().SetFocus(c.url.Widget())
+	}
+}
+
+// HasFocus returns if a child primitives has focus.
+func (c *Content) HasFocus(widget ContentWidget) bool {
+	switch widget {
+	case ContentURLBox:
+		return c.url.Widget().HasFocus()
+	case ContentRequestBody:
+		return c.request.Widget().HasFocus()
+	default:
+		return false
 	}
 }
 
