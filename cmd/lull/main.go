@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/mbpolan/lull/internal/ui"
 	"github.com/rivo/tview"
@@ -9,6 +10,9 @@ import (
 )
 
 func main() {
+	// initialize supporting modules
+	parsers.Setup()
+
 	// determine the user's home directory to save app state file in
 	stateSavePath, err := os.UserHomeDir()
 	if err != nil {

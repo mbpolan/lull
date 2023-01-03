@@ -2,9 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
-	"io"
 )
 
 // ResponseView is a component that allows viewing HTTP response attributes.
@@ -38,13 +38,13 @@ func (p *ResponseView) Reload() {
 		p.status.SetText("")
 		p.body.SetText("")
 	} else {
-		data, err := io.ReadAll(res.Body)
+		body := ""
 
-		var body string
+		// get a parser that's most suitable for the response and format the body
+		parser := parsers.GetBodyParser(res)
+		body, err := parser.Parse(res)
 		if err != nil {
 			body = fmt.Sprintf("[red]%+v", err)
-		} else {
-			body = string(data)
 		}
 
 		p.status.SetText(p.statusLine(res.StatusCode, res.Status))
