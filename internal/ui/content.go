@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
 )
@@ -28,6 +29,8 @@ func NewContent(state *state.Manager) *Content {
 	c.state = state
 	c.build()
 
+	events.Dispatcher().Subscribe(c, []events.Code{events.EventNavigateLeft, events.EventNavigateUp, events.EventNavigateDown, events.EventNavigateRight})
+
 	return c
 }
 
@@ -36,6 +39,35 @@ func (c *Content) Reload() {
 	c.url.Reload()
 	c.request.Reload()
 	c.response.Reload()
+}
+
+func (c *Content) HandleEvent(code events.Code, payload events.Payload) {
+	switch code {
+	case events.EventNavigateLeft:
+		// navigate left from response
+		if payload.Sender == c.response {
+			c.SetFocus(ContentRequestBody)
+		} else if payload.Sender == c.url || payload.Sender == c.request {
+			events.Dispatcher().PostSimple(events.EventNavigateLeft, c)
+		}
+	case events.EventNavigateUp:
+		// navigate up from request or response
+		if payload.Sender == c.request || payload.Sender == c.response {
+			c.SetFocus(ContentURLBox)
+		}
+	case events.EventNavigateDown:
+		// navigate down from url box
+		if payload.Sender == c.url {
+			c.SetFocus(ContentRequestBody)
+		}
+	case events.EventNavigateRight:
+		// navigate right from request
+		if payload.Sender == c.request {
+			c.SetFocus(ContentResponseBody)
+		}
+	default:
+		break
+	}
 }
 
 // Widget returns a primitive widget containing this component.

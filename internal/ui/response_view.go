@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
@@ -113,6 +114,10 @@ func (p *ResponseView) build(title string) {
 			p.SetView(ResponseViewBody)
 		} else if event.Rune() == '2' {
 			p.SetView(ResponseViewHeaders)
+		} else if event.Key() == tcell.KeyLeft {
+			events.Dispatcher().PostSimple(events.EventNavigateLeft, p)
+		} else if event.Key() == tcell.KeyUp {
+			events.Dispatcher().PostSimple(events.EventNavigateUp, p)
 		} else {
 			return event
 		}

@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/network"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
@@ -37,12 +38,33 @@ func NewRoot(app *tview.Application, stateManager *state.Manager) *Root {
 	r.state = stateManager
 	r.build()
 
+	events.Dispatcher().Subscribe(r, []events.Code{events.EventNavigateRight, events.EventNavigateLeft})
+
 	return r
 }
 
 // GetApplication returns the shared instance of tview.Application.
 func GetApplication() *tview.Application {
 	return application
+}
+
+func (r *Root) HandleEvent(code events.Code, payload events.Payload) {
+	switch code {
+	case events.EventNavigateRight:
+		// navigate right from collection
+		if payload.Sender == r.collection {
+			r.content.SetFocus(ContentURLBox)
+			r.StatusBar.SetLayout(StatusBarLayoutGeneral)
+		}
+	case events.EventNavigateLeft:
+		// navigate left from content
+		if payload.Sender == r.content {
+			r.collection.SetFocus()
+			r.StatusBar.SetLayout(StatusBarLayoutCollection)
+		}
+	default:
+		break
+	}
 }
 
 // Widget returns a primitive widget containing this component.

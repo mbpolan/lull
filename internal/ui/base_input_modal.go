@@ -54,6 +54,6 @@ func (m *BaseInputModal) buildButtons(row int) {
 }
 
 func (m *BaseInputModal) setupFocus(primitives []tview.Primitive) {
-	m.focusManager = util.NewFocusManager(GetApplication(), primitives)
+	m.focusManager = util.NewFocusManager(GetApplication(), m.grid, primitives)
 	m.grid.SetInputCapture(m.focusManager.HandleKeyEvent)
 }

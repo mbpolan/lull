@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/mbpolan/lull/internal/ui"
@@ -11,6 +12,7 @@ import (
 
 func main() {
 	// initialize supporting modules
+	events.Setup()
 	parsers.Setup()
 
 	// determine the user's home directory to save app state file in

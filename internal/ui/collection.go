@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
 )
@@ -158,6 +159,9 @@ func (p *Collection) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		if p.state.Get().SelectedItem != nil {
 			p.onAction(CollectionItemClone, p.state.Get().SelectedItem)
 		}
+	} else if event.Key() == tcell.KeyRight {
+		events.Dispatcher().PostSimple(events.EventNavigateRight, p)
+		return nil
 	}
 
 	return event

@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"github.com/gdamore/tcell/v2"
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
@@ -11,6 +13,7 @@ type URLBox struct {
 	flex           *tview.Flex
 	method         *tview.DropDown
 	url            *tview.InputField
+	focusHolder    *tview.TextView
 	focusManager   *util.FocusManager
 	allowedMethods []string
 	state          *state.Manager
@@ -60,12 +63,27 @@ func (u *URLBox) build() {
 	u.url.SetText(curURL)
 	u.url.SetChangedFunc(u.handleURLChanged)
 
-	u.focusManager = util.NewFocusManager(GetApplication(), []tview.Primitive{u.method, u.url})
+	u.focusHolder = tview.NewTextView()
+
+	u.focusManager = util.NewFocusManager(GetApplication(), u.focusHolder, []tview.Primitive{u.focusHolder, u.method, u.url})
 	u.method.SetInputCapture(u.focusManager.HandleKeyEvent)
 	u.url.SetInputCapture(u.focusManager.HandleKeyEvent)
 
+	u.flex.AddItem(u.focusHolder, 1, 0, false)
 	u.flex.AddItem(u.method, 8, 0, true)
 	u.flex.AddItem(u.url, 0, 1, false)
+
+	u.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyDown && GetApplication().GetFocus() == u.focusHolder {
+			events.Dispatcher().PostSimple(events.EventNavigateDown, u)
+			return nil
+		} else if event.Key() == tcell.KeyLeft && GetApplication().GetFocus() == u.focusHolder {
+			events.Dispatcher().PostSimple(events.EventNavigateLeft, u)
+			return nil
+		}
+
+		return event
+	})
 }
 
 func (u *URLBox) title() string {
