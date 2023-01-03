@@ -2,18 +2,28 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
+	"strings"
+)
+
+type ResponseViewComponent int
+
+const (
+	ResponseViewBody ResponseViewComponent = iota
+	ResponseViewHeaders
 )
 
 // ResponseView is a component that allows viewing HTTP response attributes.
 type ResponseView struct {
-	flex   *tview.Flex
-	pages  *tview.Pages
-	status *tview.TextView
-	body   *tview.TextView
-	state  *state.Manager
+	flex    *tview.Flex
+	pages   *tview.Pages
+	status  *tview.TextView
+	body    *tview.TextView
+	headers *tview.Table
+	state   *state.Manager
 }
 
 // NewResponseView returns a new instance of ResponseView.
@@ -23,6 +33,16 @@ func NewResponseView(title string, state *state.Manager) *ResponseView {
 	v.build(title)
 
 	return v
+}
+
+// SetView sets the current subview.
+func (p *ResponseView) SetView(view ResponseViewComponent) {
+	switch view {
+	case ResponseViewHeaders:
+		p.pages.SwitchToPage("headers")
+	case ResponseViewBody:
+		p.pages.SwitchToPage("body")
+	}
 }
 
 // Reload refreshes the state of the component with current app state.
@@ -49,6 +69,18 @@ func (p *ResponseView) Reload() {
 
 		p.status.SetText(p.statusLine(res.StatusCode, res.Status))
 		p.body.SetText(body)
+
+		// build header table
+		p.headers.Clear()
+		p.headers.SetCell(0, 0, tview.NewTableCell("Header").SetTextColor(tview.Styles.TertiaryTextColor))
+		p.headers.SetCell(0, 1, tview.NewTableCell("Value").SetTextColor(tview.Styles.TertiaryTextColor))
+
+		row := 1
+		for k, v := range res.Header {
+			p.headers.SetCellSimple(row, 0, k)
+			p.headers.SetCellSimple(row, 1, strings.Join(v, ";"))
+			row++
+		}
 	}
 }
 
@@ -71,7 +103,22 @@ func (p *ResponseView) build(title string) {
 	p.flex.AddItem(p.pages, 0, 1, true)
 
 	p.body = tview.NewTextView()
+	p.headers = tview.NewTable()
+
 	p.pages.AddAndSwitchToPage("body", p.body, true)
+	p.pages.AddPage("headers", p.headers, true, false)
+
+	p.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == '1' {
+			p.SetView(ResponseViewBody)
+		} else if event.Rune() == '2' {
+			p.SetView(ResponseViewHeaders)
+		} else {
+			return event
+		}
+
+		return nil
+	})
 }
 
 func (p *ResponseView) statusLine(code int, status string) string {

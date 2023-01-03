@@ -99,6 +99,9 @@ func (r *Root) handleControlKeyAction(code tcell.Key, key rune) bool {
 	case tcell.KeyCtrlR:
 		r.content.SetFocus(ContentRequestBody)
 		r.StatusBar.SetLayout(StatusBarLayoutGeneral)
+	case tcell.KeyCtrlY:
+		r.content.SetFocus(ContentResponseBody)
+		r.StatusBar.SetLayout(StatusBarLayoutGeneral)
 	case tcell.KeyCtrlG:
 		r.sendCurrentRequest()
 	case tcell.KeyCtrlS:

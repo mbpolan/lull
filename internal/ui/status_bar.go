@@ -67,6 +67,7 @@ func (s *StatusBar) setupForGeneral() {
 	s.flex.AddItem(s.label("Save Current [ctrl+s]"), 0, 1, false)
 	s.flex.AddItem(s.label("URL [ctrl+a]"), 0, 1, false)
 	s.flex.AddItem(s.label("Request [ctrl+r]"), 0, 1, false)
+	s.flex.AddItem(s.label("Response [ctrl+y]"), 0, 1, false)
 	s.flex.AddItem(s.label("Send [ctrl+g]"), 0, 1, false)
 	s.flex.AddItem(s.label("Quit [ctrl+q]"), 0, 1, false)
 }

@@ -18,6 +18,7 @@ type ContentWidget int16
 
 const (
 	ContentRequestBody ContentWidget = iota
+	ContentResponseBody
 	ContentURLBox
 )
 
@@ -47,6 +48,8 @@ func (c *Content) SetFocus(widget ContentWidget) {
 	switch widget {
 	case ContentRequestBody:
 		GetApplication().SetFocus(c.request.Widget())
+	case ContentResponseBody:
+		GetApplication().SetFocus(c.response.Widget())
 	case ContentURLBox:
 		GetApplication().SetFocus(c.url.Widget())
 	}
