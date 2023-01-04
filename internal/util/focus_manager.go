@@ -2,25 +2,74 @@ package util
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/rivo/tview"
 )
+
+type FocusDirection int
+
+const (
+	FocusUp FocusDirection = iota
+	FocusDown
+	FocusLeft
+	FocusRight
+)
+
+type FocusManagerHandler func(event *tcell.EventKey) *tcell.EventKey
 
 // FocusManager is a utility that manages and handles changing focus amongst a set of primitives. An optional parent
 // may be passed that will receive focus when the escape key is pressed.
 type FocusManager struct {
-	application *tview.Application
-	parent      tview.Primitive
-	primitives  []tview.Primitive
+	sender           any
+	application      *tview.Application
+	dispatcher       *events.EventDispatcher
+	parent           tview.Primitive
+	arrowParentFocus bool
+	directions       map[tcell.Key]events.Code
+	primitives       []tview.Primitive
+	handler          FocusManagerHandler
 }
 
 // NewFocusManager creates a new instance of FocusManager to manage the given set of primitives.
-func NewFocusManager(application *tview.Application, parent tview.Primitive, primitives []tview.Primitive) *FocusManager {
+func NewFocusManager(sender any, application *tview.Application, dispatcher *events.EventDispatcher, parent tview.Primitive, primitives ...tview.Primitive) *FocusManager {
 	f := new(FocusManager)
+	f.sender = sender
 	f.application = application
+	f.dispatcher = dispatcher
 	f.parent = parent
+	f.arrowParentFocus = true
+	f.directions = map[tcell.Key]events.Code{}
 	f.primitives = primitives
 
 	return f
+}
+
+// SetLenientArrowNavigation allows arrow navigation to occur without requiring the parent primitive to have focus.
+func (f *FocusManager) SetLenientArrowNavigation() {
+	f.arrowParentFocus = false
+}
+
+// SetHandler sets the function to invoke when the FocusManager does not handle a key event. This can be useful for
+// chaining instances of FocusManager and other key event handlers.
+func (f *FocusManager) SetHandler(handler FocusManagerHandler) {
+	f.handler = handler
+}
+
+// AddArrowNavigation enables dispatching a directional navigation event if the given arrow key event(s) are received
+// while the parent primitive has focus.
+func (f *FocusManager) AddArrowNavigation(directions ...FocusDirection) {
+	for _, i := range directions {
+		switch i {
+		case FocusUp:
+			f.directions[tcell.KeyUp] = events.EventNavigateUp
+		case FocusDown:
+			f.directions[tcell.KeyDown] = events.EventNavigateDown
+		case FocusLeft:
+			f.directions[tcell.KeyLeft] = events.EventNavigateLeft
+		case FocusRight:
+			f.directions[tcell.KeyRight] = events.EventNavigateRight
+		}
+	}
 }
 
 // HandleKeyEvent processes a keyboard event and changes which primitive is focused.
@@ -41,6 +90,17 @@ func (f *FocusManager) HandleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	} else if event.Key() == tcell.KeyEscape && f.parent != nil {
 		f.application.SetFocus(f.parent)
+		return nil
+	} else if code, ok := f.directions[event.Key()]; ok {
+		// check if we require the parent primitive to have focus before allow arrow navigation
+		if !f.arrowParentFocus || f.application.GetFocus() == f.parent {
+			f.dispatcher.PostSimple(code, f.sender)
+			return nil
+		}
+	}
+
+	if f.handler != nil {
+		return f.handler(event)
 	}
 
 	return event

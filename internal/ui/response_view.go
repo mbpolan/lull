@@ -6,6 +6,7 @@ import (
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 	"strings"
 )
@@ -19,12 +20,13 @@ const (
 
 // ResponseView is a component that allows viewing HTTP response attributes.
 type ResponseView struct {
-	flex    *tview.Flex
-	pages   *tview.Pages
-	status  *tview.TextView
-	body    *tview.TextView
-	headers *tview.Table
-	state   *state.Manager
+	flex         *tview.Flex
+	pages        *tview.Pages
+	status       *tview.TextView
+	body         *tview.TextView
+	headers      *tview.Table
+	focusManager *util.FocusManager
+	state        *state.Manager
 }
 
 // NewResponseView returns a new instance of ResponseView.
@@ -109,21 +111,24 @@ func (p *ResponseView) build(title string) {
 	p.pages.AddAndSwitchToPage("body", p.body, true)
 	p.pages.AddPage("headers", p.headers, true, false)
 
-	p.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == '1' {
-			p.SetView(ResponseViewBody)
-		} else if event.Rune() == '2' {
-			p.SetView(ResponseViewHeaders)
-		} else if event.Key() == tcell.KeyLeft {
-			events.Dispatcher().PostSimple(events.EventNavigateLeft, p)
-		} else if event.Key() == tcell.KeyUp {
-			events.Dispatcher().PostSimple(events.EventNavigateUp, p)
-		} else {
-			return event
-		}
+	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.flex)
+	p.focusManager.AddArrowNavigation(util.FocusLeft, util.FocusUp)
+	p.focusManager.SetLenientArrowNavigation()
+	p.focusManager.SetHandler(p.handleKeyEvent)
 
-		return nil
-	})
+	p.flex.SetInputCapture(p.focusManager.HandleKeyEvent)
+}
+
+func (p *ResponseView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
+	if event.Rune() == '1' {
+		p.SetView(ResponseViewBody)
+	} else if event.Rune() == '2' {
+		p.SetView(ResponseViewHeaders)
+	} else {
+		return event
+	}
+
+	return nil
 }
 
 func (p *ResponseView) statusLine(code int, status string) string {

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 )
@@ -54,6 +55,6 @@ func (m *BaseInputModal) buildButtons(row int) {
 }
 
 func (m *BaseInputModal) setupFocus(primitives []tview.Primitive) {
-	m.focusManager = util.NewFocusManager(GetApplication(), m.grid, primitives)
+	m.focusManager = util.NewFocusManager(m, GetApplication(), events.Dispatcher(), m.grid, primitives...)
 	m.grid.SetInputCapture(m.focusManager.HandleKeyEvent)
 }

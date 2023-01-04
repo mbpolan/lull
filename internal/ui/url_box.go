@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/mbpolan/lull/internal/util"
@@ -65,25 +64,16 @@ func (u *URLBox) build() {
 
 	u.focusHolder = tview.NewTextView()
 
-	u.focusManager = util.NewFocusManager(GetApplication(), u.focusHolder, []tview.Primitive{u.focusHolder, u.method, u.url})
+	u.focusManager = util.NewFocusManager(u, GetApplication(), events.Dispatcher(), u.focusHolder, u.focusHolder, u.method, u.url)
+	u.focusManager.AddArrowNavigation(util.FocusLeft, util.FocusDown, util.FocusRight)
+
 	u.method.SetInputCapture(u.focusManager.HandleKeyEvent)
 	u.url.SetInputCapture(u.focusManager.HandleKeyEvent)
+	u.flex.SetInputCapture(u.focusManager.HandleKeyEvent)
 
-	u.flex.AddItem(u.focusHolder, 1, 0, false)
-	u.flex.AddItem(u.method, 8, 0, true)
+	u.flex.AddItem(u.focusHolder, 1, 0, true)
+	u.flex.AddItem(u.method, 8, 0, false)
 	u.flex.AddItem(u.url, 0, 1, false)
-
-	u.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyDown && GetApplication().GetFocus() == u.focusHolder {
-			events.Dispatcher().PostSimple(events.EventNavigateDown, u)
-			return nil
-		} else if event.Key() == tcell.KeyLeft && GetApplication().GetFocus() == u.focusHolder {
-			events.Dispatcher().PostSimple(events.EventNavigateLeft, u)
-			return nil
-		}
-
-		return event
-	})
 }
 
 func (u *URLBox) title() string {

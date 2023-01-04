@@ -61,8 +61,8 @@ func (c *Content) HandleEvent(code events.Code, payload events.Payload) {
 			c.SetFocus(ContentRequestBody)
 		}
 	case events.EventNavigateRight:
-		// navigate right from request
-		if payload.Sender == c.request {
+		// navigate right from url box or from request
+		if payload.Sender == c.url || payload.Sender == c.request {
 			c.SetFocus(ContentResponseBody)
 		}
 	default:
