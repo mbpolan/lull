@@ -26,6 +26,7 @@ type ResponseView struct {
 	body         *tview.TextView
 	headers      *tview.Table
 	focusManager *util.FocusManager
+	sbSequences  []events.StatusBarContextChangeSequence
 	state        *state.Manager
 }
 
@@ -35,7 +36,27 @@ func NewResponseView(title string, state *state.Manager) *ResponseView {
 	v.state = state
 	v.build(title)
 
+	v.sbSequences = []events.StatusBarContextChangeSequence{
+		{
+			Label:       "Body",
+			KeySequence: "1",
+		},
+		{
+			Label:       "Headers",
+			KeySequence: "2",
+		},
+	}
+
 	return v
+}
+
+// SetFocus sets the focus on this component.
+func (p *ResponseView) SetFocus() {
+	events.Dispatcher().Post(events.EventStatusBarContextChange, p, &events.StatusBarContextChangeData{
+		Fields: p.sbSequences,
+	})
+
+	GetApplication().SetFocus(p.Widget())
 }
 
 // SetView sets the current subview.

@@ -54,13 +54,11 @@ func (r *Root) HandleEvent(code events.Code, payload events.Payload) {
 		// navigate right from collection
 		if payload.Sender == r.collection {
 			r.content.SetFocus(ContentURLBox)
-			r.StatusBar.SetLayout(StatusBarLayoutGeneral)
 		}
 	case events.EventNavigateLeft:
 		// navigate left from content
 		if payload.Sender == r.content {
 			r.collection.SetFocus()
-			r.StatusBar.SetLayout(StatusBarLayoutCollection)
 		}
 	default:
 		break
@@ -114,16 +112,12 @@ func (r *Root) handleControlKeyAction(code tcell.Key, key rune) bool {
 	switch code {
 	case tcell.KeyCtrlL:
 		r.collection.SetFocus()
-		r.StatusBar.SetLayout(StatusBarLayoutCollection)
 	case tcell.KeyCtrlA:
 		r.content.SetFocus(ContentURLBox)
-		r.StatusBar.SetLayout(StatusBarLayoutGeneral)
 	case tcell.KeyCtrlR:
 		r.content.SetFocus(ContentRequestBody)
-		r.StatusBar.SetLayout(StatusBarLayoutGeneral)
 	case tcell.KeyCtrlY:
 		r.content.SetFocus(ContentResponseBody)
-		r.StatusBar.SetLayout(StatusBarLayoutGeneral)
 	case tcell.KeyCtrlG:
 		r.sendCurrentRequest()
 	case tcell.KeyCtrlS:
@@ -142,12 +136,10 @@ func (r *Root) handleShiftKeyAction(code tcell.Key, key rune) bool {
 	case tcell.KeyRight:
 		if !r.content.Widget().HasFocus() {
 			r.content.SetFocus(ContentURLBox)
-			r.StatusBar.SetLayout(StatusBarLayoutGeneral)
 		}
 	case tcell.KeyLeft:
 		if !r.collection.Widget().HasFocus() {
 			r.collection.SetFocus()
-			r.StatusBar.SetLayout(StatusBarLayoutCollection)
 		}
 	default:
 		return false

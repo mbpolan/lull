@@ -4,6 +4,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 )
 
@@ -20,9 +21,11 @@ type CollectionItemActionHandler func(action CollectionItemAction, item *state.C
 
 // Collection is a view that shows saved API requests.
 type Collection struct {
-	tree     *tview.TreeView
-	state    *state.Manager
-	onAction CollectionItemActionHandler
+	tree         *tview.TreeView
+	state        *state.Manager
+	focusManager *util.FocusManager
+	sbSequences  []events.StatusBarContextChangeSequence
+	onAction     CollectionItemActionHandler
 }
 
 // NewCollection returns a new instance of Collection.
@@ -30,6 +33,25 @@ func NewCollection(state *state.Manager) *Collection {
 	p := new(Collection)
 	p.state = state
 	p.build()
+
+	p.sbSequences = []events.StatusBarContextChangeSequence{
+		{
+			Label:       "Open",
+			KeySequence: "enter",
+		},
+		{
+			Label:       "Rename",
+			KeySequence: "r",
+		},
+		{
+			Label:       "Clone",
+			KeySequence: "c",
+		},
+		{
+			Label:       "Delete",
+			KeySequence: "d",
+		},
+	}
 
 	return p
 }
@@ -67,6 +89,10 @@ func (p *Collection) Reload() {
 
 // SetFocus sets the focus on this component.
 func (p *Collection) SetFocus() {
+	events.Dispatcher().Post(events.EventStatusBarContextChange, p, &events.StatusBarContextChangeData{
+		Fields: p.sbSequences,
+	})
+
 	GetApplication().SetFocus(p.tree)
 }
 
@@ -80,7 +106,10 @@ func (p *Collection) build() {
 	})
 	p.tree.SetChangedFunc(p.handleNodeChange)
 
-	p.tree.SetInputCapture(p.handleKeyEvent)
+	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.tree)
+	p.focusManager.SetHandler(p.handleKeyEvent)
+	p.focusManager.AddArrowNavigation(util.FocusRight)
+	p.tree.SetInputCapture(p.focusManager.HandleKeyEvent)
 
 	p.Reload()
 }
@@ -159,9 +188,6 @@ func (p *Collection) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		if p.state.Get().SelectedItem != nil {
 			p.onAction(CollectionItemClone, p.state.Get().SelectedItem)
 		}
-	} else if event.Key() == tcell.KeyRight {
-		events.Dispatcher().PostSimple(events.EventNavigateRight, p)
-		return nil
 	}
 
 	return event

@@ -15,6 +15,7 @@ type URLBox struct {
 	focusHolder    *tview.TextView
 	focusManager   *util.FocusManager
 	allowedMethods []string
+	sbSequences    []events.StatusBarContextChangeSequence
 	state          *state.Manager
 }
 
@@ -25,7 +26,19 @@ func NewURLBox(state *state.Manager) *URLBox {
 	u.allowedMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
 	u.build()
 
+	// no additional key sequences supported by this component
+	u.sbSequences = []events.StatusBarContextChangeSequence{}
+
 	return u
+}
+
+// SetFocus sets the focus on this component.
+func (u *URLBox) SetFocus() {
+	events.Dispatcher().Post(events.EventStatusBarContextChange, u, &events.StatusBarContextChangeData{
+		Fields: u.sbSequences,
+	})
+
+	GetApplication().SetFocus(u.Widget())
 }
 
 // Reload refreshes the state of the URL box component with current app state.

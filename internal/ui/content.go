@@ -79,11 +79,11 @@ func (c *Content) Widget() *tview.Flex {
 func (c *Content) SetFocus(widget ContentWidget) {
 	switch widget {
 	case ContentRequestBody:
-		GetApplication().SetFocus(c.request.Widget())
+		c.request.SetFocus()
 	case ContentResponseBody:
-		GetApplication().SetFocus(c.response.Widget())
+		c.response.SetFocus()
 	case ContentURLBox:
-		GetApplication().SetFocus(c.url.Widget())
+		c.url.SetFocus()
 	}
 }
 

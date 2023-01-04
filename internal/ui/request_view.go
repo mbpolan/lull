@@ -14,6 +14,7 @@ type RequestView struct {
 	body         *tview.TextArea
 	focusHolder  *tview.TextView
 	focusManager *util.FocusManager
+	sbSequences  []events.StatusBarContextChangeSequence
 	state        *state.Manager
 }
 
@@ -23,7 +24,19 @@ func NewRequestView(title string, state *state.Manager) *RequestView {
 	p.state = state
 	p.build(title)
 
+	// no additional key sequences” supported by this component
+	p.sbSequences = []events.StatusBarContextChangeSequence{}
+
 	return p
+}
+
+// SetFocus sets the focus on this component.
+func (p *RequestView) SetFocus() {
+	events.Dispatcher().Post(events.EventStatusBarContextChange, p, &events.StatusBarContextChangeData{
+		Fields: p.sbSequences,
+	})
+
+	GetApplication().SetFocus(p.Widget())
 }
 
 // Reload refreshes the state of the component with current app state.
