@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
@@ -8,6 +9,8 @@ import (
 	"github.com/rivo/tview"
 	"strings"
 )
+
+const headerTableSeparator = "; "
 
 // RequestView is a view that allows viewing and editing request/response components.
 type RequestView struct {
@@ -60,7 +63,7 @@ func (p *RequestView) Reload() {
 	row := 1
 	for k, v := range item.Headers {
 		p.headers.SetCellSimple(row, 0, k)
-		p.headers.SetCellSimple(row, 1, strings.Join(v, "; "))
+		p.headers.SetCellSimple(row, 1, strings.Join(v, headerTableSeparator))
 		row++
 	}
 
@@ -90,6 +93,7 @@ func (p *RequestView) build(title string) {
 
 	p.headers = tview.NewTable()
 	p.headers.SetSelectable(true, false)
+	p.headers.SetSelectedFunc(p.showEditHeaderModal)
 
 	p.pages.AddAndSwitchToPage("body", p.body, true)
 	p.pages.AddPage("headers", p.headers, true, false)
@@ -119,7 +123,7 @@ func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		p.pages.SwitchToPage("headers")
 		GetApplication().SetFocus(p.headers)
 	} else if event.Rune() == '+' {
-		p.showHeaderModal()
+		p.showAddHeaderModal()
 	} else if event.Rune() == '-' {
 		p.removeHeader()
 	} else {
@@ -131,24 +135,20 @@ func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 
 func (p *RequestView) removeHeader() {
 	item := p.state.Get().ActiveItem
-	row, _ := p.headers.GetSelection()
-	if item == nil || row < 1 {
+	if item == nil {
 		return
 	}
 
-	key := p.headers.GetCell(row, 0)
-	value := p.headers.GetCell(row, 1)
-	for k, v := range item.Headers {
-		if k == key.Text && strings.Join(v, "; ") == value.Text {
-			delete(item.Headers, k)
-			break
-		}
+	key, _, err := p.currentHeader()
+	if err == nil {
+		return
 	}
 
+	item.RemoveHeader(key)
 	p.Reload()
 }
 
-func (p *RequestView) showHeaderModal() {
+func (p *RequestView) showAddHeaderModal() {
 	m := NewKeyValueModal("Add Header", "Header", "Value", p.handleAddHeader, p.hideModal)
 	p.pages.AddPage("modal", m.Widget(), true, true)
 	GetApplication().SetFocus(m.Widget())
@@ -160,11 +160,32 @@ func (p *RequestView) handleAddHeader(key string, value string) {
 		return
 	}
 
-	if _, ok := item.Headers[key]; !ok {
-		item.Headers[key] = []string{}
+	item.AddHeader(key, value)
+	p.hideModal()
+	p.Reload()
+}
+
+func (p *RequestView) showEditHeaderModal(row int, _ int) {
+	key, value, err := p.currentHeader()
+	if err != nil {
+		return
 	}
 
-	item.Headers[key] = append(item.Headers[key], value)
+	m := NewKeyValueModal("Edit Header", "Header", "Value", p.handleEditHeader, p.hideModal)
+	m.SetKey(key)
+	m.SetValue(strings.Join(value, headerTableSeparator))
+
+	p.pages.AddPage("modal", m.Widget(), true, true)
+	GetApplication().SetFocus(m.Widget())
+}
+
+func (p *RequestView) handleEditHeader(key string, value string) {
+	item := p.state.Get().ActiveItem
+	if item == nil {
+		return
+	}
+
+	item.Headers[key] = strings.Split(value, headerTableSeparator)
 	p.hideModal()
 	p.Reload()
 }
@@ -184,6 +205,18 @@ func (p *RequestView) currentRequestBody() string {
 	}
 
 	return item.RequestBody
+}
+
+func (p *RequestView) currentHeader() (string, []string, error) {
+	row, _ := p.headers.GetSelection()
+	if row < 1 {
+		return "", nil, errors.New("no header selected")
+	}
+
+	key := p.headers.GetCell(row, 0)
+	value := p.headers.GetCell(row, 1)
+
+	return key.Text, strings.Split(value.Text, headerTableSeparator), nil
 }
 
 func (p *RequestView) handleBodyChange() {

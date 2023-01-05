@@ -48,6 +48,29 @@ func NewCollectionRequest(name, method string, url string, parent *CollectionIte
 	return r
 }
 
+// AddHeader adds a header with the given key and value.
+func (c *CollectionItem) AddHeader(key string, value string) {
+	if _, ok := c.Headers[key]; !ok {
+		c.Headers[key] = []string{value}
+	} else {
+		c.Headers[key] = append(c.Headers[key], value)
+	}
+}
+
+// AddHeaders adds headers with the given key and values.
+func (c *CollectionItem) AddHeaders(key string, values []string) {
+	if _, ok := c.Headers[key]; !ok {
+		c.Headers[key] = values
+	} else {
+		c.Headers[key] = append(c.Headers[key], values...)
+	}
+}
+
+// RemoveHeader removes a header with the given key and value.
+func (c *CollectionItem) RemoveHeader(key string) {
+	delete(c.Headers, key)
+}
+
 // AddChild appends an item to the end of this item's children. If this item is not a group (isGroup is false),
 // then this method does nothing.
 func (c *CollectionItem) AddChild(item *CollectionItem) {
