@@ -63,6 +63,10 @@ func (p *RequestView) Reload() {
 		p.headers.SetCellSimple(row, 1, strings.Join(v, "; "))
 		row++
 	}
+
+	if len(item.Headers) > 0 {
+		p.headers.Select(1, 0)
+	}
 }
 
 // Widget returns a primitive widget containing this component.
@@ -85,7 +89,7 @@ func (p *RequestView) build(title string) {
 	p.body.SetChangedFunc(p.handleBodyChange)
 
 	p.headers = tview.NewTable()
-	p.headers.SetInputCapture(p.handleKeyEvent)
+	p.headers.SetSelectable(true, false)
 
 	p.pages.AddAndSwitchToPage("body", p.body, true)
 	p.pages.AddPage("headers", p.headers, true, false)
@@ -113,14 +117,35 @@ func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		p.pages.SwitchToPage("body")
 	} else if event.Rune() == '2' {
 		p.pages.SwitchToPage("headers")
+		GetApplication().SetFocus(p.headers)
 	} else if event.Rune() == '+' {
 		p.showHeaderModal()
-		return nil
+	} else if event.Rune() == '-' {
+		p.removeHeader()
 	} else {
 		return event
 	}
 
 	return nil
+}
+
+func (p *RequestView) removeHeader() {
+	item := p.state.Get().ActiveItem
+	row, _ := p.headers.GetSelection()
+	if item == nil || row < 1 {
+		return
+	}
+
+	key := p.headers.GetCell(row, 0)
+	value := p.headers.GetCell(row, 1)
+	for k, v := range item.Headers {
+		if k == key.Text && strings.Join(v, "; ") == value.Text {
+			delete(item.Headers, k)
+			break
+		}
+	}
+
+	p.Reload()
 }
 
 func (p *RequestView) showHeaderModal() {
