@@ -13,6 +13,7 @@ type CollectionItem struct {
 	Name        string
 	Method      string
 	URL         string
+	Headers     map[string][]string
 	RequestBody string
 	Response    *http.Response  `json:"-"` // do not serialize
 	Parent      *CollectionItem `json:"-"` // prepare circular references when serializing
@@ -41,6 +42,7 @@ func NewCollectionRequest(name, method string, url string, parent *CollectionIte
 	r.Name = name
 	r.Method = method
 	r.URL = url
+	r.Headers = map[string][]string{}
 	r.Parent = parent
 
 	return r
