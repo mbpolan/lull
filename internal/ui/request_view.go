@@ -185,7 +185,27 @@ func (p *RequestView) handleEditHeader(key string, value string) {
 		return
 	}
 
-	item.Headers[key] = strings.Split(value, headerTableSeparator)
+	prevKey, _, err := p.currentHeader()
+	if err != nil {
+		return
+	}
+
+	newValues := strings.Split(value, headerTableSeparator)
+
+	// if the key has changed, we need to remove the existing header entry entirely
+	if prevKey == key {
+		item.Headers[key] = newValues
+	} else {
+		item.RemoveHeader(prevKey)
+
+		// if there is already an existing header with the new key, concat the values
+		if v, ok := item.Headers[key]; ok {
+			item.Headers[key] = append(v, newValues...)
+		} else {
+			item.Headers[key] = newValues
+		}
+	}
+	
 	p.hideModal()
 	p.Reload()
 }
