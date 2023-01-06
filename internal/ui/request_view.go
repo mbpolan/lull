@@ -140,7 +140,7 @@ func (p *RequestView) removeHeader() {
 	}
 
 	key, _, err := p.currentHeader()
-	if err == nil {
+	if err != nil {
 		return
 	}
 
