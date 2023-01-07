@@ -335,7 +335,7 @@ func (r *Root) sendCurrentRequest() {
 		return // FIXME
 	}
 
-	res, err := client.Exchange(item.Method, uri, item.RequestBody)
+	res, err := client.Exchange(item.Method, uri, item.RequestBody, item.Headers)
 	if err != nil {
 		fmt.Printf("Shit: %+v\n", err)
 		return // FIXME

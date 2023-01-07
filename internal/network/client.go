@@ -17,7 +17,7 @@ func NewClient() *Client {
 	return c
 }
 
-func (c *Client) Exchange(method string, url *url.URL, body string) (*http.Response, error) {
+func (c *Client) Exchange(method string, url *url.URL, body string, headers map[string][]string) (*http.Response, error) {
 	var data io.ReadCloser
 	if body != "" {
 		data = io.NopCloser(strings.NewReader(body))
@@ -26,6 +26,7 @@ func (c *Client) Exchange(method string, url *url.URL, body string) (*http.Respo
 	return c.client.Do(&http.Request{
 		Method: method,
 		URL:    url,
+		Header: headers,
 		Body:   data,
 	})
 }
