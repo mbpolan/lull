@@ -7,7 +7,6 @@ import (
 	"github.com/mbpolan/lull/internal/network"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
-	"net/url"
 	"strings"
 )
 
@@ -20,13 +19,14 @@ const (
 
 // Root is a top-level container for all application UI components.
 type Root struct {
-	pages        *tview.Pages
-	flex         *tview.Flex
-	collection   *Collection
-	content      *Content
-	StatusBar    *StatusBar
-	currentModal string
-	state        *state.Manager
+	pages          *tview.Pages
+	flex           *tview.Flex
+	collection     *Collection
+	content        *Content
+	StatusBar      *StatusBar
+	currentModal   string
+	requestPending bool
+	state          *state.Manager
 }
 
 // NewRoot returns a new Root instance.
@@ -35,6 +35,7 @@ func NewRoot(app *tview.Application, stateManager *state.Manager) *Root {
 
 	r := new(Root)
 	r.currentModal = ""
+	r.requestPending = false
 	r.state = stateManager
 	r.build()
 
@@ -322,27 +323,35 @@ func (r *Root) hideCurrentModal() {
 }
 
 func (r *Root) sendCurrentRequest() {
+	if r.requestPending {
+		return
+	}
+
+	// TODO: this needs some synchronization
+	r.requestPending = true
+
 	item := r.state.Get().ActiveItem
 	if item == nil {
 		return
 	}
 
-	client := network.NewClient()
+	go func() {
+		client := network.NewClient()
 
-	uri, err := url.Parse(item.URL)
-	if err != nil {
-		fmt.Printf("Shit: %+v\n", err)
-		return // FIXME
-	}
+		res, err := client.Exchange(item)
+		if err != nil {
+			fmt.Printf("Shit: %+v\n", err)
+			return // FIXME
+		}
 
-	res, err := client.Exchange(item.Method, uri, item.RequestBody, item.Headers)
-	if err != nil {
-		fmt.Printf("Shit: %+v\n", err)
-		return // FIXME
-	}
+		item.Response = res
+		r.state.Get().LastError = err
 
-	item.Response = res
-	r.state.Get().LastError = err
-	r.content.Reload()
-	r.state.SetDirty()
+		GetApplication().QueueUpdateDraw(func() {
+			r.content.Reload()
+			r.state.SetDirty()
+		})
+
+		r.requestPending = false
+	}()
 }
