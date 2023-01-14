@@ -1,13 +1,13 @@
 package ui
 
 import (
-	"context"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/network"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
+	"net/http"
 	"strings"
 )
 
@@ -20,16 +20,14 @@ const (
 
 // Root is a top-level container for all application UI components.
 type Root struct {
-	pages          *tview.Pages
-	flex           *tview.Flex
-	collection     *Collection
-	content        *Content
-	StatusBar      *StatusBar
-	currentModal   string
-	requestPending bool
-	ctx            context.Context
-	cancelFunc     context.CancelFunc
-	state          *state.Manager
+	pages        *tview.Pages
+	flex         *tview.Flex
+	collection   *Collection
+	content      *Content
+	StatusBar    *StatusBar
+	currentModal string
+	network      *network.Manager
+	state        *state.Manager
 }
 
 // NewRoot returns a new Root instance.
@@ -38,7 +36,7 @@ func NewRoot(app *tview.Application, stateManager *state.Manager) *Root {
 
 	r := new(Root)
 	r.currentModal = ""
-	r.requestPending = false
+	r.network = network.NewNetworkManager(r.handleRequestFinished)
 	r.state = stateManager
 	r.build()
 
@@ -307,8 +305,7 @@ func (r *Root) handleSaveCurrentRequest(name string) {
 }
 
 func (r *Root) handleCancelCurrentRequest() {
-	r.requestPending = false
-	r.cancelFunc()
+	r.network.CancelCurrent()
 	r.hideCurrentModal()
 }
 
@@ -332,43 +329,33 @@ func (r *Root) hideCurrentModal() {
 }
 
 func (r *Root) sendCurrentRequest() {
-	if r.requestPending {
-		return
-	}
-
-	// TODO: this needs some synchronization
-	r.requestPending = true
-	r.ctx, r.cancelFunc = context.WithCancel(context.Background())
-
-	// prepare a modal to show while the request is in flight
-	m := NewAlertModal("Sending", "Request is in flight...", "Cancel", r.handleCancelCurrentRequest)
-
 	item := r.state.Get().ActiveItem
 	if item == nil {
 		return
 	}
 
-	// TODO: this should not be a ui responsibility
-	go func() {
-		client := network.NewClient()
-
-		res, err := client.Exchange(r.ctx, item)
-		if err != nil {
-			fmt.Printf("Shit: %+v\n", err)
-			return // FIXME
-		}
-
-		item.Response = res
-		r.state.Get().LastError = err
-
-		GetApplication().QueueUpdateDraw(func() {
-			r.hideCurrentModal()
-			r.content.Reload()
-			r.state.SetDirty()
-		})
-
-		r.requestPending = false
-	}()
+	var m *AlertModal
+	if err := r.network.SendRequest(item); err != nil {
+		m = NewAlertModal("Error", fmt.Sprintf("Can't send this request: %s", err.Error()), "OK", r.hideCurrentModal)
+	} else {
+		m = NewAlertModal("Sending", "Request is in flight...", "Cancel", r.handleCancelCurrentRequest)
+	}
 
 	r.showModal(m.Widget())
+}
+
+func (r *Root) handleRequestFinished(item *state.CollectionItem, res *http.Response, err error) {
+	if err != nil {
+		fmt.Printf("Shit: %+v\n", err)
+		return // FIXME
+	}
+
+	item.Response = res
+	r.state.Get().LastError = err
+
+	GetApplication().QueueUpdateDraw(func() {
+		r.hideCurrentModal()
+		r.content.Reload()
+		r.state.SetDirty()
+	})
 }
