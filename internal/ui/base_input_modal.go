@@ -42,6 +42,11 @@ func (m *BaseInputModal) ContentRect() (int, int) {
 	return m.width - 2, m.height
 }
 
+// ButtonHeight returns the height (in cells) of the buttons in the modal.
+func (m *BaseInputModal) ButtonHeight() int {
+	return 1
+}
+
 // SetText sets the informational text to show in the modal.
 func (m *BaseInputModal) SetText(text string) {
 	m.infoText.SetText(text)

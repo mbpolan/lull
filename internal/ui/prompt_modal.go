@@ -29,5 +29,9 @@ func (m *PromptModal) build(title string, text string) {
 	})
 
 	m.buildButtons(row, BaseInputModalButtonAll)
+
+	// give the text as much height as possible, fixed height buttons
+	m.grid.SetRows(-1, m.ButtonHeight())
+
 	m.setupFocus([]tview.Primitive{m.ok, m.cancel})
 }

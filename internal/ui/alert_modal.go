@@ -34,6 +34,10 @@ func (m *AlertModal) build(title string, text string, buttonText string) {
 	})
 
 	m.buildButtons(row, BaseInputModalButtonAccept)
+
+	// give the text as much space as possible
+	m.grid.SetRows(-1, m.ButtonHeight())
+
 	m.ok.SetLabel(buttonText)
 	m.setupFocus([]tview.Primitive{m.ok})
 }
