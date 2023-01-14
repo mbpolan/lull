@@ -32,6 +32,6 @@ func (m *TextInputModal) build(title string, text string, label string) {
 
 	m.grid.AddItem(m.name, row, 0, 1, 2, 0, 0, true)
 
-	m.buildButtons(row + 1)
+	m.buildButtons(row+1, BaseInputModalButtonAll)
 	m.setupFocus([]tview.Primitive{m.name, m.ok, m.cancel})
 }

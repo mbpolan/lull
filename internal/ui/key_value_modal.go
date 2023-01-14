@@ -47,6 +47,6 @@ func (m *KeyValueModal) build(title, keyLabel, valueLabel string) {
 	m.grid.AddItem(m.key, row, 0, 1, 2, 0, 0, true)
 	m.grid.AddItem(m.value, row+1, 0, 1, 2, 0, 0, false)
 
-	m.buildButtons(row + 2)
+	m.buildButtons(row+2, BaseInputModalButtonAll)
 	m.setupFocus([]tview.Primitive{m.key, m.value, m.ok, m.cancel})
 }

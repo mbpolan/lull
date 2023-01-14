@@ -1,6 +1,7 @@
 package network
 
 import (
+	"context"
 	"github.com/mbpolan/lull/internal/state"
 	"io"
 	"net/http"
@@ -21,7 +22,7 @@ func NewClient() *Client {
 	return c
 }
 
-func (c *Client) Exchange(item *state.CollectionItem) (*http.Response, error) {
+func (c *Client) Exchange(ctx context.Context, item *state.CollectionItem) (*http.Response, error) {
 	uri, err := url.Parse(item.URL)
 	if err != nil {
 		return nil, err
@@ -32,10 +33,13 @@ func (c *Client) Exchange(item *state.CollectionItem) (*http.Response, error) {
 		data = io.NopCloser(strings.NewReader(item.RequestBody))
 	}
 
-	return c.client.Do(&http.Request{
+	req := &http.Request{
 		Method: item.Method,
 		URL:    uri,
 		Header: item.Headers,
 		Body:   data,
-	})
+	}
+
+	req = req.WithContext(ctx)
+	return c.client.Do(req)
 }

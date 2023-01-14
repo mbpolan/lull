@@ -28,6 +28,6 @@ func (m *PromptModal) build(title string, text string) {
 		m.onAccept()
 	})
 
-	m.buildButtons(row)
+	m.buildButtons(row, BaseInputModalButtonAll)
 	m.setupFocus([]tview.Primitive{m.ok, m.cancel})
 }

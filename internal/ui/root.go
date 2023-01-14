@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
@@ -26,6 +27,8 @@ type Root struct {
 	StatusBar      *StatusBar
 	currentModal   string
 	requestPending bool
+	ctx            context.Context
+	cancelFunc     context.CancelFunc
 	state          *state.Manager
 }
 
@@ -303,6 +306,12 @@ func (r *Root) handleSaveCurrentRequest(name string) {
 	r.state.SetDirty()
 }
 
+func (r *Root) handleCancelCurrentRequest() {
+	r.requestPending = false
+	r.cancelFunc()
+	r.hideCurrentModal()
+}
+
 func (r *Root) setCurrentRequest(item *state.CollectionItem) {
 	if r.state.Get().ActiveItem == item {
 		return
@@ -329,16 +338,21 @@ func (r *Root) sendCurrentRequest() {
 
 	// TODO: this needs some synchronization
 	r.requestPending = true
+	r.ctx, r.cancelFunc = context.WithCancel(context.Background())
+
+	// prepare a modal to show while the request is in flight
+	m := NewAlertModal("Sending", "Request is in flight...", "Cancel", r.handleCancelCurrentRequest)
 
 	item := r.state.Get().ActiveItem
 	if item == nil {
 		return
 	}
 
+	// TODO: this should not be a ui responsibility
 	go func() {
 		client := network.NewClient()
 
-		res, err := client.Exchange(item)
+		res, err := client.Exchange(r.ctx, item)
 		if err != nil {
 			fmt.Printf("Shit: %+v\n", err)
 			return // FIXME
@@ -348,10 +362,13 @@ func (r *Root) sendCurrentRequest() {
 		r.state.Get().LastError = err
 
 		GetApplication().QueueUpdateDraw(func() {
+			r.hideCurrentModal()
 			r.content.Reload()
 			r.state.SetDirty()
 		})
 
 		r.requestPending = false
 	}()
+
+	r.showModal(m.Widget())
 }

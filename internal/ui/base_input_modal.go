@@ -6,6 +6,14 @@ import (
 	"github.com/rivo/tview"
 )
 
+type BaseInputModalButton byte
+
+const (
+	BaseInputModalButtonAccept BaseInputModalButton = 1 << iota
+	BaseInputModalButtonReject
+	BaseInputModalButtonAll = BaseInputModalButtonAccept | BaseInputModalButtonReject
+)
+
 // BaseInputModal is a scaffold that provides the basis for building more complex input modals. You should not
 // use this component directly. Instead, use it as a base for embedding in more functional modals.
 type BaseInputModal struct {
@@ -49,9 +57,23 @@ func (m *BaseInputModal) build(title string, text string, accept func()) int {
 	return 1
 }
 
-func (m *BaseInputModal) buildButtons(row int) {
-	m.grid.AddItem(m.ok, row, 0, 1, 1, 0, 0, true)
-	m.grid.AddItem(m.cancel, row, 1, 1, 1, 0, 0, false)
+func (m *BaseInputModal) buildButtons(row int, buttons BaseInputModalButton) {
+	col := 0
+
+	// determine how many columns each button should span, depending on how many total buttons there are to
+	// configure on the modal
+	colSpan := 2
+	if buttons&BaseInputModalButtonAll != 0 {
+		colSpan = 1
+	}
+
+	if buttons&BaseInputModalButtonAccept != 0 {
+		m.grid.AddItem(m.ok, row, col, 1, colSpan, 0, 0, true)
+	}
+
+	if buttons&BaseInputModalButtonReject != 0 {
+		m.grid.AddItem(m.cancel, row, 1, 1, colSpan, 0, 0, false)
+	}
 }
 
 func (m *BaseInputModal) setupFocus(primitives []tview.Primitive) {
