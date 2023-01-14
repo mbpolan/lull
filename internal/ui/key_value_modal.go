@@ -15,7 +15,7 @@ type KeyValueModal struct {
 // NewKeyValueModal returns a new instance of KeyValueModal.
 func NewKeyValueModal(title, keyLabel, valueLabel string, accept KeyValueModalAcceptHandler, reject ModalRejectHandler) *KeyValueModal {
 	m := new(KeyValueModal)
-	m.BaseInputModal = new(BaseInputModal)
+	m.BaseInputModal = NewBaseInputModal()
 	m.onAccept = accept
 	m.onReject = reject
 	m.build(title, keyLabel, valueLabel)

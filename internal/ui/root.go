@@ -357,7 +357,7 @@ func (r *Root) handleRequestFinished(item *state.CollectionItem, res *http.Respo
 		}
 
 		GetApplication().QueueUpdateDraw(func() {
-			m := NewAlertModal("Error", fmt.Sprintf("Could not send request: %+v", err), "OK", r.hideCurrentModal)
+			m := NewAlertModal("Error", fmt.Sprintf("Could not send request. Error: %s", err.Error()), "OK", r.hideCurrentModal)
 			r.hideCurrentModal()
 			r.showModal(m.Widget())
 

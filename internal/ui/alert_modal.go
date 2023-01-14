@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 )
 
@@ -13,9 +14,16 @@ type AlertModal struct {
 // NewAlertModal returns a new modal with text and button handler.
 func NewAlertModal(title string, text string, buttonText string, accept ModalNoArgAcceptHandler) *AlertModal {
 	m := new(AlertModal)
-	m.BaseInputModal = new(BaseInputModal)
+	m.BaseInputModal = NewBaseInputModal()
 	m.onAccept = accept
-	m.build(title, text, buttonText)
+
+	// wrap the text, so it fits in the modal, and adjust the modal height based on how many lines we
+	// need to display
+	w, _ := m.ContentRect()
+	wrapped, lines := util.WrapText(text, w)
+	m.height += lines
+
+	m.build(title, wrapped, buttonText)
 
 	return m
 }

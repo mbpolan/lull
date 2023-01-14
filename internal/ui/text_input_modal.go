@@ -14,7 +14,7 @@ type TextInputModal struct {
 // NewTextInputModal returns a new modal with a title, information text, label and button handlers.
 func NewTextInputModal(title string, text string, label string, accept ModalTextAcceptHandler, reject ModalRejectHandler) *TextInputModal {
 	m := new(TextInputModal)
-	m.BaseInputModal = new(BaseInputModal)
+	m.BaseInputModal = NewBaseInputModal()
 	m.onAccept = accept
 	m.onReject = reject
 	m.build(title, text, label)

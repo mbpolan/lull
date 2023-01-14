@@ -15,7 +15,7 @@ type PromptModal struct {
 // NewPromptModal returns a new modal with text and button handlers.
 func NewPromptModal(title string, text string, accept ModalNoArgAcceptHandler, reject ModalRejectHandler) *PromptModal {
 	m := new(PromptModal)
-	m.BaseInputModal = new(BaseInputModal)
+	m.BaseInputModal = NewBaseInputModal()
 	m.onAccept = accept
 	m.onReject = reject
 	m.build(title, text)

@@ -23,7 +23,23 @@ type BaseInputModal struct {
 	cancel       *tview.Button
 	focusManager *util.FocusManager
 	onReject     ModalRejectHandler
+	width        int
+	height       int
 	*Modal
+}
+
+// NewBaseInputModal returns a new BaseInputModal instance with default dimensions.
+func NewBaseInputModal() *BaseInputModal {
+	m := new(BaseInputModal)
+	m.width = 50
+	m.height = 5
+
+	return m
+}
+
+// ContentRect returns the width and height of the rectangle containing the modal's content.
+func (m *BaseInputModal) ContentRect() (int, int) {
+	return m.width - 2, m.height
 }
 
 // SetText sets the informational text to show in the modal.
@@ -52,8 +68,19 @@ func (m *BaseInputModal) build(title string, text string, accept func()) int {
 	m.cancel = tview.NewButton("Cancel")
 	m.cancel.SetSelectedFunc(m.onReject)
 
+	// default dimensions if not specified
+	width := m.width
+	if width <= 0 {
+		width = 50
+	}
+
+	height := m.height
+	if height <= 0 {
+		height = 5
+	}
+
 	m.grid.AddItem(m.infoText, 0, 0, 1, 2, 0, 0, false)
-	m.Modal = NewModal(m.grid, 50, 5)
+	m.Modal = NewModal(m.grid, width, height)
 
 	return 1
 }
