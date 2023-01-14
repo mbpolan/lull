@@ -62,9 +62,11 @@ func (m *BaseInputModal) buildButtons(row int, buttons BaseInputModalButton) {
 
 	// determine how many columns each button should span, depending on how many total buttons there are to
 	// configure on the modal
-	colSpan := 2
-	if buttons&BaseInputModalButtonAll != 0 {
+	var colSpan int
+	if buttons == BaseInputModalButtonAll {
 		colSpan = 1
+	} else {
+		colSpan = 2
 	}
 
 	if buttons&BaseInputModalButtonAccept != 0 {
