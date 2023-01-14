@@ -44,3 +44,13 @@ func Test_WrapText_LengthNotEvenlyDivisibleByWidth(t *testing.T) {
 	assert.Equal(t, 6, lines)
 	assert.Equal(t, "lor\nem \nips\num \nrof\nl", wrapped)
 }
+
+func Test_WrapText_EmbeddedNewlines(t *testing.T) {
+	text := "lorem ipsum\nwhat"
+	width := 3
+
+	wrapped, lines := WrapText(text, width)
+
+	assert.Equal(t, 6, lines)
+	assert.Equal(t, "lor\nem \nips\num\nwha\nt", wrapped)
+}
