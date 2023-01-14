@@ -7,7 +7,7 @@ import (
 
 // AppState represents the state of the application.
 type AppState struct {
-	LastError    error
+	LastError    error `json:"-"` // do not serialize
 	Collection   *CollectionItem
 	SelectedItem *CollectionItem
 	ActiveItem   *CollectionItem
