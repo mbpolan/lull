@@ -44,6 +44,7 @@ func (m *BaseInputModal) build(title string, text string, accept func()) int {
 	m.infoText = tview.NewTextView()
 	m.infoText.SetDynamicColors(true)
 	m.infoText.SetText(text)
+	m.infoText.SetMaxLines(10)
 
 	m.ok = tview.NewButton("OK")
 	m.ok.SetSelectedFunc(accept)

@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
@@ -346,12 +348,28 @@ func (r *Root) sendCurrentRequest() {
 
 func (r *Root) handleRequestFinished(item *state.CollectionItem, res *http.Response, err error) {
 	if err != nil {
-		fmt.Printf("Shit: %+v\n", err)
-		return // FIXME
+		item.Response = nil
+		r.state.Get().LastError = err
+
+		// if the error is because the request was cancelled, we don't need to show any modals
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+
+		GetApplication().QueueUpdateDraw(func() {
+			m := NewAlertModal("Error", fmt.Sprintf("Could not send request: %+v", err), "OK", r.hideCurrentModal)
+			r.hideCurrentModal()
+			r.showModal(m.Widget())
+
+			r.content.Reload()
+			r.state.SetDirty()
+		})
+
+		return
 	}
 
 	item.Response = res
-	r.state.Get().LastError = err
+	r.state.Get().LastError = nil
 
 	GetApplication().QueueUpdateDraw(func() {
 		r.hideCurrentModal()
