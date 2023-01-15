@@ -70,7 +70,7 @@ func (r *Root) HandleEvent(code events.Code, payload events.Payload) {
 }
 
 // Widget returns a primitive widget containing this component.
-func (r *Root) Widget() *tview.Pages {
+func (r *Root) Widget() tview.Primitive {
 	return r.pages
 }
 

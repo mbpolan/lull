@@ -62,7 +62,7 @@ func (p *Collection) SetItemActivatedHandler(handler CollectionItemActionHandler
 }
 
 // Widget returns a primitive widget containing this component.
-func (p *Collection) Widget() *tview.TreeView {
+func (p *Collection) Widget() tview.Primitive {
 	return p.tree
 }
 

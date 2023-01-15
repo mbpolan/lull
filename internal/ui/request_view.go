@@ -70,7 +70,7 @@ func (p *RequestView) Reload() {
 }
 
 // Widget returns a primitive widget containing this component.
-func (p *RequestView) Widget() *tview.Flex {
+func (p *RequestView) Widget() tview.Primitive {
 	return p.flex
 }
 

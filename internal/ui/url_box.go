@@ -54,7 +54,7 @@ func (u *URLBox) Reload() {
 }
 
 // Widget returns a primitive widget containing this component.
-func (u *URLBox) Widget() *tview.Flex {
+func (u *URLBox) Widget() tview.Primitive {
 	return u.flex
 }
 

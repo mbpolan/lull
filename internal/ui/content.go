@@ -71,7 +71,7 @@ func (c *Content) HandleEvent(code events.Code, payload events.Payload) {
 }
 
 // Widget returns a primitive widget containing this component.
-func (c *Content) Widget() *tview.Flex {
+func (c *Content) Widget() tview.Primitive {
 	return c.flex
 }
 
