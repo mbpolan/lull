@@ -37,7 +37,7 @@ func NewCollection(state *state.Manager) *Collection {
 	p.sbSequences = []events.StatusBarContextChangeSequence{
 		{
 			Label:       "Open",
-			KeySequence: "enter",
+			KeySequence: "⏎",
 		},
 		{
 			Label:       "Rename",
@@ -49,7 +49,7 @@ func NewCollection(state *state.Manager) *Collection {
 		},
 		{
 			Label:       "Delete",
-			KeySequence: "d",
+			KeySequence: "-",
 		},
 	}
 
@@ -178,7 +178,7 @@ func (p *Collection) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		}
 
 		return nil
-	} else if event.Rune() == 'd' {
+	} else if event.Rune() == '-' {
 		if p.state.Get().SelectedItem != nil {
 			p.onAction(CollectionItemDelete, p.state.Get().SelectedItem)
 		}

@@ -5,6 +5,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/rivo/tview"
+	"unicode/utf8"
 )
 
 // StatusBar presents informational components.
@@ -55,14 +56,14 @@ func (s *StatusBar) setLayoutFromData(layout *events.StatusBarContextChangeData)
 }
 
 func (s *StatusBar) prefixCommonLabels() {
-	s.addLabel("Navigate [arrow]")
-	s.addLabel("Focus [tab]")
+	s.addLabel("Navigate [↑↓←→]")
+	s.addLabel("Focus [⇥]")
 }
 
 func (s *StatusBar) suffixCommonLabels() {
-	s.addLabel("Save [ctrl+s]")
-	s.addLabel("Send [ctrl+g]")
-	s.addLabel("Quit [ctrl+q]")
+	s.addLabel("Save [⌃S]")
+	s.addLabel("Send [⌃G]")
+	s.addLabel("Quit [⌃Q]")
 }
 
 func (s *StatusBar) addLabel(text string) {
@@ -73,6 +74,6 @@ func (s *StatusBar) addLabel(text string) {
 
 	// add the label and a spacer right after it
 	// TODO: can we do something with margins instead of adding an empty primitive?
-	s.flex.AddItem(t, len(text), 1, false)
+	s.flex.AddItem(t, utf8.RuneCountInString(text), 1, false)
 	s.flex.AddItem(tview.NewBox(), 1, 1, false)
 }

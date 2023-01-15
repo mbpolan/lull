@@ -297,7 +297,7 @@ func (p *RequestView) keyboardSequences() []events.StatusBarContextChangeSequenc
 			},
 			{
 				Label:       "Edit header",
-				KeySequence: "enter",
+				KeySequence: "⏎",
 			},
 		}
 	default:
