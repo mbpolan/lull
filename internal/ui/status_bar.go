@@ -56,6 +56,7 @@ func (s *StatusBar) setLayoutFromData(layout *events.StatusBarContextChangeData)
 
 func (s *StatusBar) prefixCommonLabels() {
 	s.addLabel("Navigate [arrow]")
+	s.addLabel("Focus [tab]")
 }
 
 func (s *StatusBar) suffixCommonLabels() {

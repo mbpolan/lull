@@ -66,7 +66,7 @@ func (p *ResponseView) Reload() {
 	if item == nil {
 		return
 	}
-	
+
 	// clear headers table
 	p.headers.Clear()
 	p.headers.SetCell(0, 0, tview.NewTableCell("Header").SetTextColor(tview.Styles.TertiaryTextColor))
