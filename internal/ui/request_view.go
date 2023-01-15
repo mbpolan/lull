@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+const requestViewBody = "body"
+const requestViewHeaders = "headers"
+const requestViewModal = "modal"
+
 const headerTableSeparator = "; "
 
 // RequestView is a view that allows viewing and editing request/response components.
@@ -20,7 +24,6 @@ type RequestView struct {
 	headers      *tview.Table
 	focusHolder  *tview.TextView
 	focusManager *util.FocusManager
-	sbSequences  []events.StatusBarContextChangeSequence
 	state        *state.Manager
 }
 
@@ -31,18 +34,12 @@ func NewRequestView(title string, state *state.Manager) *RequestView {
 	p.build(title)
 	p.Reload()
 
-	// no additional key sequences” supported by this component
-	p.sbSequences = []events.StatusBarContextChangeSequence{}
-
 	return p
 }
 
 // SetFocus sets the focus on this component.
 func (p *RequestView) SetFocus() {
-	events.Dispatcher().Post(events.EventStatusBarContextChange, p, &events.StatusBarContextChangeData{
-		Fields: p.sbSequences,
-	})
-
+	p.postKeyboardSequences()
 	GetApplication().SetFocus(p.Widget())
 }
 
@@ -95,8 +92,8 @@ func (p *RequestView) build(title string) {
 	p.headers.SetSelectable(true, false)
 	p.headers.SetSelectedFunc(p.showEditHeaderModal)
 
-	p.pages.AddAndSwitchToPage("body", p.body, true)
-	p.pages.AddPage("headers", p.headers, true, false)
+	p.pages.AddAndSwitchToPage(requestViewBody, p.body, true)
+	p.pages.AddPage(requestViewHeaders, p.headers, true, false)
 
 	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.focusHolder, p.focusHolder, p.body)
 	p.focusManager.AddArrowNavigation(util.FocusUp, util.FocusLeft, util.FocusRight)
@@ -109,7 +106,7 @@ func (p *RequestView) build(title string) {
 
 func (p *RequestView) filterKeyEvent(event *tcell.EventKey) util.FocusFilterResult {
 	// if a modal is shown, do not process any key events and let the modal handle them instead
-	if name, _ := p.pages.GetFrontPage(); name == "modal" {
+	if name, _ := p.pages.GetFrontPage(); name == requestViewModal {
 		return util.FocusPreHandlePropagate
 	}
 
@@ -118,9 +115,11 @@ func (p *RequestView) filterKeyEvent(event *tcell.EventKey) util.FocusFilterResu
 
 func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == '1' {
-		p.pages.SwitchToPage("body")
+		p.pages.SwitchToPage(requestViewBody)
+		p.postKeyboardSequences()
 	} else if event.Rune() == '2' {
-		p.pages.SwitchToPage("headers")
+		p.pages.SwitchToPage(requestViewHeaders)
+		p.postKeyboardSequences()
 		GetApplication().SetFocus(p.headers)
 	} else if event.Rune() == '+' {
 		p.showAddHeaderModal()
@@ -150,8 +149,17 @@ func (p *RequestView) removeHeader() {
 
 func (p *RequestView) showAddHeaderModal() {
 	m := NewKeyValueModal("Add Header", "Header", "Value", p.handleAddHeader, p.hideModal)
-	p.pages.AddPage("modal", m.Widget(), true, true)
+	p.pages.AddPage(requestViewModal, m.Widget(), true, true)
 	GetApplication().SetFocus(m.Widget())
+}
+
+func (p *RequestView) handleBodyChange() {
+	item := p.state.Get().ActiveItem
+	if item == nil {
+		return
+	}
+
+	item.RequestBody = p.body.GetText()
 }
 
 func (p *RequestView) handleAddHeader(key string, value string) {
@@ -175,7 +183,7 @@ func (p *RequestView) showEditHeaderModal(row int, _ int) {
 	m.SetKey(key)
 	m.SetValue(strings.Join(value, headerTableSeparator))
 
-	p.pages.AddPage("modal", m.Widget(), true, true)
+	p.pages.AddPage(requestViewModal, m.Widget(), true, true)
 	GetApplication().SetFocus(m.Widget())
 }
 
@@ -205,14 +213,14 @@ func (p *RequestView) handleEditHeader(key string, value string) {
 			item.Headers[key] = newValues
 		}
 	}
-	
+
 	p.hideModal()
 	p.Reload()
 }
 
 func (p *RequestView) hideModal() {
-	p.pages.RemovePage("modal")
-	p.pages.SwitchToPage("headers")
+	p.pages.RemovePage(requestViewModal)
+	p.pages.SwitchToPage(requestViewHeaders)
 
 	// return focus to the pages
 	GetApplication().SetFocus(p.pages)
@@ -239,11 +247,48 @@ func (p *RequestView) currentHeader() (string, []string, error) {
 	return key.Text, strings.Split(value.Text, headerTableSeparator), nil
 }
 
-func (p *RequestView) handleBodyChange() {
-	item := p.state.Get().ActiveItem
-	if item == nil {
-		return
+func (p *RequestView) keyboardSequences() []events.StatusBarContextChangeSequence {
+	var seq []events.StatusBarContextChangeSequence
+	page, _ := p.pages.GetFrontPage()
+
+	switch page {
+	case requestViewBody:
+		seq = []events.StatusBarContextChangeSequence{
+			{
+				Label:       "Headers",
+				KeySequence: "2",
+			},
+		}
+	case requestViewHeaders:
+		seq = []events.StatusBarContextChangeSequence{
+			{
+				Label:       "Body",
+				KeySequence: "1",
+			},
+			{
+				Label:       "Add header",
+				KeySequence: "+",
+			},
+			{
+				Label:       "Remove header",
+				KeySequence: "-",
+			},
+			{
+				Label:       "Edit header",
+				KeySequence: "enter",
+			},
+		}
+	default:
+		break
 	}
 
-	item.RequestBody = p.body.GetText()
+	return seq
+}
+
+func (p *RequestView) postKeyboardSequences() {
+	seq := p.keyboardSequences()
+
+	events.Dispatcher().Post(events.EventStatusBarContextChange, p, &events.StatusBarContextChangeData{
+		Fields: seq,
+	})
 }
