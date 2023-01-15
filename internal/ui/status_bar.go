@@ -39,7 +39,6 @@ func (s *StatusBar) Widget() tview.Primitive {
 func (s *StatusBar) build() {
 	s.flex = tview.NewFlex()
 	s.flex.SetDirection(tview.FlexColumn)
-	s.flex.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
 
 	s.suffixCommonLabels()
 }
@@ -49,26 +48,30 @@ func (s *StatusBar) setLayoutFromData(layout *events.StatusBarContextChangeData)
 	s.prefixCommonLabels()
 
 	for _, i := range layout.Fields {
-		s.flex.AddItem(s.label(fmt.Sprintf("%s [%s]", i.Label, i.KeySequence)), 0, 1, false)
+		s.addLabel(fmt.Sprintf("%s [%s]", i.Label, i.KeySequence))
 	}
 
 	s.suffixCommonLabels()
 }
 
 func (s *StatusBar) prefixCommonLabels() {
-	s.flex.AddItem(s.label("Navigate [arrow]"), 0, 1, false)
+	s.addLabel("Navigate [arrow]")
 }
 
 func (s *StatusBar) suffixCommonLabels() {
-	s.flex.AddItem(s.label("Save [ctrl+s]"), 0, 1, false)
-	s.flex.AddItem(s.label("Send [ctrl+g]"), 0, 1, false)
-	s.flex.AddItem(s.label("Quit [ctrl+q]"), 0, 1, false)
+	s.addLabel("Save [ctrl+s]")
+	s.addLabel("Send [ctrl+g]")
+	s.addLabel("Quit [ctrl+q]")
 }
 
-func (s *StatusBar) label(text string) *tview.TextView {
+func (s *StatusBar) addLabel(text string) {
 	t := tview.NewTextView()
 	t.SetText(text)
 	t.SetTextColor(tcell.ColorWhite)
 	t.SetBackgroundColor(tcell.ColorBlue)
-	return t
+
+	// add the label and a spacer right after it
+	// TODO: can we do something with margins instead of adding an empty primitive?
+	s.flex.AddItem(t, len(text), 1, false)
+	s.flex.AddItem(tview.NewBox(), 1, 1, false)
 }
