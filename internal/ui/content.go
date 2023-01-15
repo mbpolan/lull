@@ -101,8 +101,8 @@ func (c *Content) HasFocus(widget ContentWidget) bool {
 
 func (c *Content) build() {
 	c.url = NewURLBox(c.state)
-	c.request = NewRequestView("Request", c.state)
-	c.response = NewResponseView("Response", c.state)
+	c.request = NewRequestView(c.state)
+	c.response = NewResponseView(c.state)
 
 	split := tview.NewFlex()
 	split.AddItem(c.request.Widget(), 0, 1, false)

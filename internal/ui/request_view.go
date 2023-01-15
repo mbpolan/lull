@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
@@ -9,6 +10,8 @@ import (
 	"github.com/rivo/tview"
 	"strings"
 )
+
+const requestViewTitle = "Request"
 
 const requestViewBody = "body"
 const requestViewHeaders = "headers"
@@ -28,10 +31,10 @@ type RequestView struct {
 }
 
 // NewRequestView returns a new instance of RequestView.
-func NewRequestView(title string, state *state.Manager) *RequestView {
+func NewRequestView(state *state.Manager) *RequestView {
 	p := new(RequestView)
 	p.state = state
-	p.build(title)
+	p.build()
 	p.Reload()
 
 	return p
@@ -45,6 +48,8 @@ func (p *RequestView) SetFocus() {
 
 // Reload refreshes the state of the component with current app state.
 func (p *RequestView) Reload() {
+	p.setTitle()
+
 	item := p.state.Get().ActiveItem
 	if item == nil {
 		return
@@ -74,10 +79,9 @@ func (p *RequestView) Widget() tview.Primitive {
 	return p.flex
 }
 
-func (p *RequestView) build(title string) {
+func (p *RequestView) build() {
 	p.flex = tview.NewFlex()
 	p.flex.SetBorder(true)
-	p.flex.SetTitle(title)
 
 	p.focusHolder = tview.NewTextView()
 
@@ -104,6 +108,26 @@ func (p *RequestView) build(title string) {
 	p.flex.SetInputCapture(p.focusManager.HandleKeyEvent)
 }
 
+func (p *RequestView) setTitle() {
+	page, _ := p.pages.GetFrontPage()
+	if page == requestViewModal {
+		page = ""
+	}
+
+	title := requestViewTitle
+	if page != "" {
+		title = fmt.Sprintf("%s (%s)", requestViewTitle, page)
+	}
+
+	p.flex.SetTitle(title)
+}
+
+func (p *RequestView) switchToPage(view string) {
+	p.pages.SwitchToPage(view)
+	p.postKeyboardSequences()
+	p.setTitle()
+}
+
 func (p *RequestView) filterKeyEvent(event *tcell.EventKey) util.FocusFilterResult {
 	// if a modal is shown, do not process any key events and let the modal handle them instead
 	if name, _ := p.pages.GetFrontPage(); name == requestViewModal {
@@ -115,11 +139,9 @@ func (p *RequestView) filterKeyEvent(event *tcell.EventKey) util.FocusFilterResu
 
 func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == '1' {
-		p.pages.SwitchToPage(requestViewBody)
-		p.postKeyboardSequences()
+		p.switchToPage(requestViewBody)
 	} else if event.Rune() == '2' {
-		p.pages.SwitchToPage(requestViewHeaders)
-		p.postKeyboardSequences()
+		p.switchToPage(requestViewHeaders)
 		GetApplication().SetFocus(p.headers)
 	} else if event.Rune() == '+' {
 		p.showAddHeaderModal()

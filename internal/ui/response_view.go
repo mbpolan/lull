@@ -11,12 +11,10 @@ import (
 	"strings"
 )
 
-type ResponseViewComponent int
+const responseViewTitle = "Response"
 
-const (
-	ResponseViewBody ResponseViewComponent = iota
-	ResponseViewHeaders
-)
+const responseViewBody = "body"
+const responseViewHeaders = "headers"
 
 // ResponseView is a component that allows viewing HTTP response attributes.
 type ResponseView struct {
@@ -31,12 +29,13 @@ type ResponseView struct {
 }
 
 // NewResponseView returns a new instance of ResponseView.
-func NewResponseView(title string, state *state.Manager) *ResponseView {
-	v := new(ResponseView)
-	v.state = state
-	v.build(title)
+func NewResponseView(state *state.Manager) *ResponseView {
+	p := new(ResponseView)
+	p.state = state
+	p.build()
+	p.Reload()
 
-	v.sbSequences = []events.StatusBarContextChangeSequence{
+	p.sbSequences = []events.StatusBarContextChangeSequence{
 		{
 			Label:       "Body",
 			KeySequence: "1",
@@ -47,7 +46,7 @@ func NewResponseView(title string, state *state.Manager) *ResponseView {
 		},
 	}
 
-	return v
+	return p
 }
 
 // SetFocus sets the focus on this component.
@@ -59,18 +58,10 @@ func (p *ResponseView) SetFocus() {
 	GetApplication().SetFocus(p.Widget())
 }
 
-// SetView sets the current subview.
-func (p *ResponseView) SetView(view ResponseViewComponent) {
-	switch view {
-	case ResponseViewHeaders:
-		p.pages.SwitchToPage("headers")
-	case ResponseViewBody:
-		p.pages.SwitchToPage("body")
-	}
-}
-
 // Reload refreshes the state of the component with current app state.
 func (p *ResponseView) Reload() {
+	p.setTitle()
+
 	item := p.state.Get().ActiveItem
 	if item == nil {
 		return
@@ -109,14 +100,13 @@ func (p *ResponseView) Reload() {
 }
 
 // Widget returns a primitive widget containing this component.
-func (p *ResponseView) Widget() *tview.Flex {
+func (p *ResponseView) Widget() tview.Primitive {
 	return p.flex
 }
 
-func (p *ResponseView) build(title string) {
+func (p *ResponseView) build() {
 	p.flex = tview.NewFlex()
 	p.flex.SetBorder(true)
-	p.flex.SetTitle(title)
 	p.flex.SetDirection(tview.FlexRow)
 
 	p.status = tview.NewTextView()
@@ -129,8 +119,8 @@ func (p *ResponseView) build(title string) {
 	p.body = tview.NewTextView()
 	p.headers = tview.NewTable()
 
-	p.pages.AddAndSwitchToPage("body", p.body, true)
-	p.pages.AddPage("headers", p.headers, true, false)
+	p.pages.AddAndSwitchToPage(responseViewBody, p.body, true)
+	p.pages.AddPage(responseViewHeaders, p.headers, true, false)
 
 	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.flex)
 	p.focusManager.AddArrowNavigation(util.FocusLeft, util.FocusUp)
@@ -140,11 +130,27 @@ func (p *ResponseView) build(title string) {
 	p.flex.SetInputCapture(p.focusManager.HandleKeyEvent)
 }
 
+func (p *ResponseView) setTitle() {
+	page, _ := p.pages.GetFrontPage()
+
+	title := responseViewTitle
+	if page != "" {
+		title = fmt.Sprintf("%s (%s)", responseViewTitle, page)
+	}
+
+	p.flex.SetTitle(title)
+}
+
+func (p *ResponseView) switchToPage(view string) {
+	p.pages.SwitchToPage(view)
+	p.setTitle()
+}
+
 func (p *ResponseView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == '1' {
-		p.SetView(ResponseViewBody)
+		p.switchToPage(responseViewBody)
 	} else if event.Rune() == '2' {
-		p.SetView(ResponseViewHeaders)
+		p.switchToPage(responseViewHeaders)
 	} else {
 		return event
 	}
