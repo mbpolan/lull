@@ -66,9 +66,13 @@ func (p *ResponseView) Reload() {
 	if item == nil {
 		return
 	}
+	
+	// clear headers table
+	p.headers.Clear()
+	p.headers.SetCell(0, 0, tview.NewTableCell("Header").SetTextColor(tview.Styles.TertiaryTextColor))
+	p.headers.SetCell(0, 1, tview.NewTableCell("Value").SetTextColor(tview.Styles.TertiaryTextColor))
 
 	res := item.Response
-
 	if res == nil {
 		p.status.SetText("")
 		p.body.SetText("")
@@ -86,10 +90,6 @@ func (p *ResponseView) Reload() {
 		p.body.SetText(body)
 
 		// build header table
-		p.headers.Clear()
-		p.headers.SetCell(0, 0, tview.NewTableCell("Header").SetTextColor(tview.Styles.TertiaryTextColor))
-		p.headers.SetCell(0, 1, tview.NewTableCell("Value").SetTextColor(tview.Styles.TertiaryTextColor))
-
 		row := 1
 		for k, v := range res.Header {
 			p.headers.SetCellSimple(row, 0, k)
