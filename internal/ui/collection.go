@@ -9,6 +9,9 @@ import (
 	"github.com/rivo/tview"
 )
 
+const collectionNodeExpanded = "-"
+const collectionNodeCollapsed = "+"
+
 type CollectionItemAction int
 
 const (
@@ -103,7 +106,7 @@ func (p *Collection) build() {
 	p.tree.SetTitle("Collection")
 	p.tree.SetBorder(true)
 	p.tree.SetSelectedFunc(func(node *tview.TreeNode) {
-		p.setNodeActive(node, true)
+		p.handleSelectNode(node, true)
 	})
 	p.tree.SetChangedFunc(p.handleNodeChange)
 
@@ -113,6 +116,24 @@ func (p *Collection) build() {
 	p.tree.SetInputCapture(p.focusManager.HandleKeyEvent)
 
 	p.Reload()
+}
+
+func (p *Collection) handleSelectNode(node *tview.TreeNode, fireCallback bool) {
+	item := node.GetReference().(*state.CollectionItem)
+
+	// if the node is a group node, either collapse or expand its children. otherwise, activate the node
+	if item.IsGroup {
+		if node.IsExpanded() {
+			node.Collapse()
+		} else {
+			node.Expand()
+		}
+
+		// update the node label to contain the correct prefix character (expanded vs collapsed)
+		node.SetText(p.labelForNode(node))
+	} else {
+		p.setNodeActive(node, fireCallback)
+	}
 }
 
 // setNodeActive changes the currently active node in the tree. The fireCallback will control if the handler for item
@@ -141,19 +162,42 @@ func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode 
 	var node *tview.TreeNode
 
 	if item.IsGroup {
-		node = tview.NewTreeNode(fmt.Sprintf("-%s", item.Name))
+		node = tview.NewTreeNode("")
 		node.SetReference(item)
+		node.SetText(p.labelForNode(node))
 		node.SetColor(tview.Styles.SecondaryTextColor)
 
 		for _, c := range item.Children {
 			node.AddChild(p.buildTreeNodes(c))
 		}
 	} else {
-		node = tview.NewTreeNode(item.Name)
+		node = tview.NewTreeNode("")
 		node.SetReference(item)
+		node.SetText(p.labelForNode(node))
 	}
 
 	return node
+}
+
+// labelForNode returns the text that should be displayed in the tree for a node.
+func (p *Collection) labelForNode(node *tview.TreeNode) string {
+	item := node.GetReference().(*state.CollectionItem)
+	if item == nil {
+		return ""
+	}
+
+	if item.IsGroup {
+		var prefix string
+		if node.IsExpanded() {
+			prefix = collectionNodeExpanded
+		} else {
+			prefix = collectionNodeCollapsed
+		}
+
+		return fmt.Sprintf("%s%s", prefix, item.Name)
+	} else {
+		return item.Name
+	}
 }
 
 // findNodeForItem returns the tview.TreeNode that contains a reference to the given state.CollectionItem.
