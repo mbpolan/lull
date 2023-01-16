@@ -9,7 +9,6 @@ import (
 	"github.com/mbpolan/lull/internal/network"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/rivo/tview"
-	"net/http"
 	"strings"
 )
 
@@ -297,7 +296,7 @@ func (r *Root) handleSaveCurrentRequest(name string) {
 	// collect current request information and add it to the collection
 	item := state.NewCollectionRequest(name, active.Method, active.URL, leaf)
 	item.RequestBody = active.RequestBody
-	item.Response = active.Response
+	item.Result = active.Result
 	leaf.AddChild(item)
 
 	r.collection.Reload()
@@ -346,18 +345,18 @@ func (r *Root) sendCurrentRequest() {
 	r.showModal(m.Widget())
 }
 
-func (r *Root) handleRequestFinished(item *state.CollectionItem, res *http.Response, err error) {
-	if err != nil {
-		item.Response = nil
-		r.state.Get().LastError = err
+func (r *Root) handleRequestFinished(item *state.CollectionItem, result *network.Result) {
+	if result.Error != nil {
+		item.Result = nil
+		r.state.Get().LastError = result.Error
 
 		// if the error is because the request was cancelled, we don't need to show any modals
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(result.Error, context.Canceled) {
 			return
 		}
 
 		GetApplication().QueueUpdateDraw(func() {
-			m := NewAlertModal("Error", fmt.Sprintf("Could not send request. Error: %s", err.Error()), "OK", r.hideCurrentModal)
+			m := NewAlertModal("Error", fmt.Sprintf("Could not send request. Error: %s", result.Error.Error()), "OK", r.hideCurrentModal)
 			r.hideCurrentModal()
 			r.showModal(m.Widget())
 
@@ -368,8 +367,11 @@ func (r *Root) handleRequestFinished(item *state.CollectionItem, res *http.Respo
 		return
 	}
 
-	item.Response = res
 	r.state.Get().LastError = nil
+	item.Result = &state.HTTPResult{
+		Response: result.Response,
+		Duration: result.EndTime.Sub(result.StartTime),
+	}
 
 	GetApplication().QueueUpdateDraw(func() {
 		r.hideCurrentModal()

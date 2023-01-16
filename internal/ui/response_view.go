@@ -21,6 +21,7 @@ type ResponseView struct {
 	flex         *tview.Flex
 	pages        *tview.Pages
 	status       *tview.TextView
+	metrics      *tview.TextView
 	body         *tview.TextView
 	headers      *tview.Table
 	focusManager *util.FocusManager
@@ -72,26 +73,29 @@ func (p *ResponseView) Reload() {
 	p.headers.SetCell(0, 0, tview.NewTableCell("Header").SetTextColor(tview.Styles.TertiaryTextColor))
 	p.headers.SetCell(0, 1, tview.NewTableCell("Value").SetTextColor(tview.Styles.TertiaryTextColor))
 
-	res := item.Response
+	res := item.Result
 	if res == nil {
 		p.status.SetText("")
+		p.metrics.SetText("")
 		p.body.SetText("")
 	} else {
+		resp := res.Response
 		body := ""
 
 		// get a parser that's most suitable for the response and format the body
-		parser := parsers.GetBodyParser(res)
-		body, err := parser.Parse(res)
+		parser := parsers.GetBodyParser(resp)
+		body, err := parser.Parse(resp)
 		if err != nil {
 			body = fmt.Sprintf("[red]%+v", err)
 		}
 
-		p.status.SetText(p.statusLine(res.StatusCode, res.Status))
+		p.status.SetText(p.statusLine(resp.StatusCode, resp.Status))
+		p.metrics.SetText(util.FormatDuration(res.Duration))
 		p.body.SetText(body)
 
 		// build header table
 		row := 1
-		for k, v := range res.Header {
+		for k, v := range resp.Header {
 			p.headers.SetCellSimple(row, 0, k)
 			p.headers.SetCellSimple(row, 1, strings.Join(v, ";"))
 			row++
@@ -110,10 +114,19 @@ func (p *ResponseView) build() {
 	p.flex.SetDirection(tview.FlexRow)
 
 	p.status = tview.NewTextView()
+	p.status.SetTextAlign(tview.AlignLeft)
 	p.status.SetDynamicColors(true)
 
+	p.metrics = tview.NewTextView()
+	p.metrics.SetTextAlign(tview.AlignRight)
+
+	statusFlex := tview.NewFlex()
+	statusFlex.SetDirection(tview.FlexColumn)
+	statusFlex.AddItem(p.status, 0, 1, false)
+	statusFlex.AddItem(p.metrics, 0, 1, false)
+
 	p.pages = tview.NewPages()
-	p.flex.AddItem(p.status, 1, 0, false)
+	p.flex.AddItem(statusFlex, 1, 0, false)
 	p.flex.AddItem(p.pages, 0, 1, true)
 
 	p.body = tview.NewTextView()

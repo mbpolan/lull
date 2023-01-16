@@ -1,9 +1,11 @@
 package util
 
 import (
+	"fmt"
 	"golang.org/x/exp/constraints"
 	"math"
 	"strings"
+	"time"
 )
 
 // Min returns the lesser of the two comparable values.
@@ -13,6 +15,19 @@ func Min[T constraints.Ordered](a, b T) T {
 	}
 
 	return b
+}
+
+// FormatDuration returns a human friendly string representing the given duration (ie: 1.23 s).
+func FormatDuration(t time.Duration) string {
+	if t < time.Second {
+		return fmt.Sprintf("%d ms", t.Milliseconds())
+	} else if t < time.Minute {
+		return fmt.Sprintf("%.2f s", t.Seconds())
+	} else if t < time.Hour {
+		return fmt.Sprintf("%.2f m", t.Minutes())
+	} else {
+		return fmt.Sprintf("%.2f h", t.Hours())
+	}
 }
 
 // WrapText inserts newlines so that the given text contains at most width characters per line. The newly wrapped

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"net/http"
+	"time"
 )
 
 // CollectionItem is a grouping or a single, saved REST API request with a given name.
@@ -15,9 +16,15 @@ type CollectionItem struct {
 	URL         string
 	Headers     map[string][]string
 	RequestBody string
-	Response    *http.Response  `json:"-"` // do not serialize
+	Result      *HTTPResult     `json:"-"` // do not serialize
 	Parent      *CollectionItem `json:"-"` // prepare circular references when serializing
 	Children    []*CollectionItem
+}
+
+// HTTPResult stores a http.Response and its associated metadata for a collection item.
+type HTTPResult struct {
+	Response *http.Response
+	Duration time.Duration
 }
 
 // NewCollectionGroup returns a CollectionGroup with a given name and no children. An optional parent may be provided

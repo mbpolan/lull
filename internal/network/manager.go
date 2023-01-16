@@ -6,9 +6,10 @@ import (
 	"github.com/mbpolan/lull/internal/state"
 	"net/http"
 	"sync"
+	"time"
 )
 
-type RequestHandler func(item *state.CollectionItem, res *http.Response, err error)
+type RequestHandler func(item *state.CollectionItem, result *Result)
 
 // Manager handles sending, queueing and cancelling in-flight HTTP requests.
 type Manager struct {
@@ -19,6 +20,15 @@ type Manager struct {
 	handler     RequestHandler
 	mutex       sync.Mutex
 	pending     bool
+	startTime   time.Time
+}
+
+// Result contains the outcome of an HTTP request.
+type Result struct {
+	Response  *http.Response
+	Error     error
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 // NewNetworkManager returns a new instance of Manager with the given handler function. The handler will be invoked
@@ -53,6 +63,7 @@ func (m *Manager) SendRequest(item *state.CollectionItem) error {
 
 	m.currentItem = item
 	m.pending = true
+	m.startTime = time.Now()
 	m.ctx, m.cancelFunc = context.WithCancel(context.Background())
 
 	// release the lock since subsequent calls to this method will error out
@@ -60,7 +71,12 @@ func (m *Manager) SendRequest(item *state.CollectionItem) error {
 
 	go func() {
 		res, err := m.client.Exchange(m.ctx, item)
-		m.handler(m.currentItem, res, err)
+		m.handler(m.currentItem, &Result{
+			Response:  res,
+			Error:     err,
+			StartTime: m.startTime,
+			EndTime:   time.Now(),
+		})
 
 		m.resetCurrent()
 	}()
