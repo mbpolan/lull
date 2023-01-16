@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/state"
@@ -137,13 +138,19 @@ func (p *Collection) setNodeActive(node *tview.TreeNode, fireCallback bool) {
 
 // buildTreeNodes constructs a tree of tview.TreeNode objects corresponding to the items in our collection.
 func (p *Collection) buildTreeNodes(item *state.CollectionItem) *tview.TreeNode {
-	node := tview.NewTreeNode(item.Name)
-	node.SetReference(item)
+	var node *tview.TreeNode
 
 	if item.IsGroup {
+		node = tview.NewTreeNode(fmt.Sprintf("-%s", item.Name))
+		node.SetReference(item)
+		node.SetColor(tview.Styles.SecondaryTextColor)
+
 		for _, c := range item.Children {
 			node.AddChild(p.buildTreeNodes(c))
 		}
+	} else {
+		node = tview.NewTreeNode(item.Name)
+		node.SetReference(item)
 	}
 
 	return node
