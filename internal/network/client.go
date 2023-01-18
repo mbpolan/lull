@@ -28,9 +28,12 @@ func (c *Client) Exchange(ctx context.Context, item *state.CollectionItem) (*htt
 		return nil, err
 	}
 
+	headers := item.Headers
+
 	var data io.ReadCloser
-	if item.RequestBody != "" {
-		data = io.NopCloser(strings.NewReader(item.RequestBody))
+	if item.RequestBody != nil {
+		data = io.NopCloser(strings.NewReader(item.RequestBody.Payload))
+		headers["Content-Type"] = []string{item.RequestBody.ContentType}
 	}
 
 	req := &http.Request{

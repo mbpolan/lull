@@ -15,10 +15,16 @@ type CollectionItem struct {
 	Method      string
 	URL         string
 	Headers     map[string][]string
-	RequestBody string
+	RequestBody *RequestBody
 	Result      *HTTPResult     `json:"-"` // do not serialize
 	Parent      *CollectionItem `json:"-"` // prepare circular references when serializing
 	Children    []*CollectionItem
+}
+
+// RequestBody stores the request body and associated content information.
+type RequestBody struct {
+	Payload     string
+	ContentType string
 }
 
 // HTTPResult stores a http.Response and its associated metadata for a collection item.

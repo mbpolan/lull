@@ -19,11 +19,19 @@ const requestViewModal = "modal"
 
 const headerTableSeparator = "; "
 
+var contentTypeOptions = []string{"None", "JSON", "Text"}
+var contentTypeOptionsToValues = map[string]string{
+	contentTypeOptions[0]: "",
+	contentTypeOptions[1]: "application/json",
+	contentTypeOptions[2]: "text/plain",
+}
+
 // RequestView is a view that allows viewing and editing request/response components.
 type RequestView struct {
 	flex         *tview.Flex
 	pages        *tview.Pages
 	body         *tview.TextArea
+	contentType  *tview.DropDown
 	headers      *tview.Table
 	focusHolder  *tview.TextView
 	focusManager *util.FocusManager
@@ -55,7 +63,39 @@ func (p *RequestView) Reload() {
 		return
 	}
 
-	p.body.SetText(item.RequestBody, false)
+	if body := item.RequestBody; body != nil {
+		contentTypeOption := ""
+		for k, v := range contentTypeOptionsToValues {
+			if v == "" {
+				continue
+			} else if strings.Index(body.ContentType, v) > -1 {
+				contentTypeOption = k
+				break
+			}
+		}
+
+		if contentTypeOption == "" {
+			contentTypeOption = contentTypeOptions[0]
+		}
+
+		contentType := -1
+		for i, c := range contentTypeOptions {
+			if c == contentTypeOption {
+				contentType = i
+				break
+			}
+		}
+
+		if contentType == -1 {
+			contentType = 0
+		}
+
+		p.contentType.SetCurrentOption(contentType)
+		p.body.SetText(body.Payload, false)
+	} else {
+		p.contentType.SetCurrentOption(0)
+		p.body.SetText("", false)
+	}
 
 	// build header table
 	p.headers.Clear()
@@ -92,19 +132,28 @@ func (p *RequestView) build() {
 	p.body = tview.NewTextArea()
 	p.body.SetChangedFunc(p.handleBodyChange)
 
+	p.contentType = tview.NewDropDown()
+	p.contentType.SetLabel("Body ")
+	p.contentType.SetOptions(contentTypeOptions, p.handleContentTypeChange)
+
+	bodyFlex := tview.NewFlex()
+	bodyFlex.SetDirection(tview.FlexRow)
+	bodyFlex.AddItem(p.contentType, 1, 0, false)
+	bodyFlex.AddItem(p.body, 0, 1, true)
+
 	p.headers = tview.NewTable()
 	p.headers.SetSelectable(true, false)
 	p.headers.SetSelectedFunc(p.showEditHeaderModal)
 
-	p.pages.AddAndSwitchToPage(requestViewBody, p.body, true)
+	p.pages.AddAndSwitchToPage(requestViewBody, bodyFlex, true)
 	p.pages.AddPage(requestViewHeaders, p.headers, true, false)
 
-	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.focusHolder, p.focusHolder, p.body)
+	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.focusHolder, p.focusHolder, p.contentType, p.body)
 	p.focusManager.AddArrowNavigation(util.FocusUp, util.FocusLeft, util.FocusRight)
 	p.focusManager.SetFilter(p.filterKeyEvent)
 	p.focusManager.SetHandler(p.handleKeyEvent)
 
-	p.body.SetInputCapture(p.focusManager.HandleKeyEvent)
+	p.body.SetInputCapture(p.handleBodyKeyEvent)
 	p.flex.SetInputCapture(p.focusManager.HandleKeyEvent)
 }
 
@@ -175,13 +224,46 @@ func (p *RequestView) showAddHeaderModal() {
 	GetApplication().SetFocus(m.Widget())
 }
 
+func (p *RequestView) handleBodyKeyEvent(event *tcell.EventKey) *tcell.EventKey {
+	// prevent inputs when there is no active content type in this request
+	if i, _ := p.contentType.GetCurrentOption(); i == 0 {
+		return nil
+	}
+
+	return p.focusManager.HandleKeyEvent(event)
+}
+
 func (p *RequestView) handleBodyChange() {
+	item := p.state.Get().ActiveItem
+	if item == nil || item.RequestBody == nil {
+		return
+	}
+
+	item.RequestBody.Payload = p.body.GetText()
+}
+
+func (p *RequestView) handleContentTypeChange(text string, index int) {
 	item := p.state.Get().ActiveItem
 	if item == nil {
 		return
 	}
 
-	item.RequestBody = p.body.GetText()
+	if index == 0 {
+		item.RequestBody = nil
+	} else {
+		contentType := contentTypeOptionsToValues[text]
+
+		// if the request previously had no request body, initialize it now
+		// otherwise, just update the content type
+		if item.RequestBody == nil {
+			item.RequestBody = &state.RequestBody{
+				ContentType: contentType,
+				Payload:     "",
+			}
+		} else {
+			item.RequestBody.ContentType = contentType
+		}
+	}
 }
 
 func (p *RequestView) handleAddHeader(key string, value string) {
@@ -250,11 +332,11 @@ func (p *RequestView) hideModal() {
 
 func (p *RequestView) currentRequestBody() string {
 	item := p.state.Get().ActiveItem
-	if item == nil {
+	if item == nil || item.RequestBody == nil {
 		return ""
 	}
 
-	return item.RequestBody
+	return item.RequestBody.Payload
 }
 
 func (p *RequestView) currentHeader() (string, []string, error) {
