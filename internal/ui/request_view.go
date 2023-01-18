@@ -412,7 +412,7 @@ func (p *RequestView) keyboardSequences() []events.StatusBarContextChangeSequenc
 			},
 			{
 				Label:       "Format",
-				KeySequence: "F",
+				KeySequence: "f",
 			},
 		}
 	case requestViewHeaders:
