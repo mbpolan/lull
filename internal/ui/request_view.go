@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/mbpolan/lull/internal/events"
+	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
@@ -196,11 +197,36 @@ func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		p.showAddHeaderModal()
 	} else if event.Rune() == '-' {
 		p.removeHeader()
+	} else if event.Rune() == 'f' {
+		p.formatBody()
 	} else {
 		return event
 	}
 
 	return nil
+}
+
+func (p *RequestView) formatBody() {
+	item := p.state.Get().ActiveItem
+	if item == nil || item.RequestBody == nil {
+		return
+	}
+
+	contentType := p.currentContentType()
+	if contentType == "" {
+		return
+	}
+
+	if parser := parsers.GetBodyParserForContentType(contentType); parser != nil {
+		formatted, err := parser.ParseBytes([]byte(item.RequestBody.Payload))
+		if err != nil {
+			util.ConsoleBell()
+			return
+		}
+
+		item.RequestBody.Payload = formatted
+		p.Reload()
+	}
 }
 
 func (p *RequestView) removeHeader() {
@@ -330,6 +356,28 @@ func (p *RequestView) hideModal() {
 	GetApplication().SetFocus(p.pages)
 }
 
+func (p *RequestView) currentContentType() string {
+	// if the body dropdown has a valid value selected, use that as the content type
+	i, contentType := p.contentType.GetCurrentOption()
+	if i != 0 {
+		return contentTypeOptionsToValues[contentType]
+	}
+
+	item := p.state.Get().ActiveItem
+	if item == nil {
+		return ""
+	}
+
+	// try to find a content type header and use the first value
+	for k, v := range item.Headers {
+		if strings.ToLower(k) == "content-type" {
+			return v[0]
+		}
+	}
+
+	return ""
+}
+
 func (p *RequestView) currentRequestBody() string {
 	item := p.state.Get().ActiveItem
 	if item == nil || item.RequestBody == nil {
@@ -361,6 +409,10 @@ func (p *RequestView) keyboardSequences() []events.StatusBarContextChangeSequenc
 			{
 				Label:       "Headers",
 				KeySequence: "2",
+			},
+			{
+				Label:       "Format",
+				KeySequence: "F",
 			},
 		}
 	case requestViewHeaders:

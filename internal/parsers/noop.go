@@ -23,3 +23,8 @@ func (n *NoopBodyParser) Parse(res *http.Response) (string, error) {
 
 	return string(data), nil
 }
+
+// ParseBytes returns the original body bytes as-is.
+func (n *NoopBodyParser) ParseBytes(body []byte) (string, error) {
+	return string(body), nil
+}

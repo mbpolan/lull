@@ -36,7 +36,12 @@ func GetBodyParser(res *http.Response) BodyParser {
 		return instance.cache[bodyParserNoop]
 	}
 
-	if strings.Contains(ct, "application/json") {
+	return GetBodyParserForContentType(ct)
+}
+
+// GetBodyParserForContentType returns an instance of BodyParser most suitable for the content type.
+func GetBodyParserForContentType(contentType string) BodyParser {
+	if strings.Contains(contentType, "application/json") {
 		return instance.cache[bodyParserJson]
 	}
 

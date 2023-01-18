@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+// ConsoleBell emits the default terminal bell sound.
+func ConsoleBell() {
+	fmt.Print("\a")
+}
+
 // Min returns the lesser of the two comparable values.
 func Min[T constraints.Ordered](a, b T) T {
 	if a < b {

@@ -22,13 +22,18 @@ func (j *JSONBodyParser) Parse(res *http.Response) (string, error) {
 		return "", err
 	}
 
+	return j.ParseBytes(data)
+}
+
+// ParseBytes returns a formatted and prettified JSON response body for the given raw bytes.
+func (j *JSONBodyParser) ParseBytes(body []byte) (string, error) {
 	var jsonData any
-	err = json.Unmarshal(data, &jsonData)
+	err := json.Unmarshal(body, &jsonData)
 	if err != nil {
 		return "", err
 	}
 
-	data, err = json.MarshalIndent(jsonData, "", "  ")
+	data, err := json.MarshalIndent(jsonData, "", "  ")
 	if err != nil {
 		return "", err
 	}
