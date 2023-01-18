@@ -24,6 +24,7 @@ type ResponseView struct {
 	metrics      *tview.TextView
 	body         *tview.TextView
 	headers      *tview.Table
+	focusHolder  *tview.TextView
 	focusManager *util.FocusManager
 	sbSequences  []events.StatusBarContextChangeSequence
 	state        *state.Manager
@@ -125,9 +126,12 @@ func (p *ResponseView) build() {
 	statusFlex.AddItem(p.status, 0, 1, false)
 	statusFlex.AddItem(p.metrics, 0, 1, false)
 
+	p.focusHolder = tview.NewTextView()
+
 	p.pages = tview.NewPages()
+	p.flex.AddItem(p.focusHolder, 0, 0, true)
 	p.flex.AddItem(statusFlex, 1, 0, false)
-	p.flex.AddItem(p.pages, 0, 1, true)
+	p.flex.AddItem(p.pages, 0, 1, false)
 
 	p.body = tview.NewTextView()
 	p.headers = tview.NewTable()
@@ -135,9 +139,8 @@ func (p *ResponseView) build() {
 	p.pages.AddAndSwitchToPage(responseViewBody, p.body, true)
 	p.pages.AddPage(responseViewHeaders, p.headers, true, false)
 
-	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.flex)
+	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.focusHolder, p.focusHolder, p.body)
 	p.focusManager.AddArrowNavigation(util.FocusLeft, util.FocusUp)
-	p.focusManager.SetLenientArrowNavigation()
 	p.focusManager.SetHandler(p.handleKeyEvent)
 
 	p.flex.SetInputCapture(p.focusManager.HandleKeyEvent)
