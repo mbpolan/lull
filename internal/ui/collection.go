@@ -9,8 +9,8 @@ import (
 	"github.com/rivo/tview"
 )
 
-const collectionNodeExpanded = "-"
-const collectionNodeCollapsed = "+"
+const collectionNodeExpanded = "▾"
+const collectionNodeCollapsed = "▸"
 
 type CollectionItemAction int
 
