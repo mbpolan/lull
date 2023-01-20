@@ -16,6 +16,7 @@ type CollectionItemAction int
 
 const (
 	CollectionItemOpen CollectionItemAction = iota
+	CollectionItemAdd
 	CollectionItemRename
 	CollectionItemDelete
 	CollectionItemClone
@@ -44,16 +45,20 @@ func NewCollection(state *state.Manager) *Collection {
 			KeySequence: "⏎",
 		},
 		{
+			Label:       "New",
+			KeySequence: "+",
+		},
+		{
+			Label:       "Delete",
+			KeySequence: "-",
+		},
+		{
 			Label:       "Rename",
 			KeySequence: "r",
 		},
 		{
 			Label:       "Clone",
 			KeySequence: "c",
-		},
-		{
-			Label:       "Delete",
-			KeySequence: "-",
 		},
 	}
 
@@ -226,6 +231,12 @@ func (p *Collection) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == 'r' {
 		if p.state.Get().SelectedItem != nil {
 			p.onAction(CollectionItemRename, p.state.Get().SelectedItem)
+		}
+
+		return nil
+	} else if event.Rune() == '+' {
+		if p.state.Get().SelectedItem != nil {
+			p.onAction(CollectionItemAdd, p.state.Get().SelectedItem)
 		}
 
 		return nil

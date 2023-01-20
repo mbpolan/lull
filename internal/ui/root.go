@@ -170,6 +170,8 @@ func (r *Root) handleCollectionItemAction(action CollectionItemAction, item *sta
 	switch action {
 	case CollectionItemRename:
 		r.handleRenameSelectedItem(item)
+	case CollectionItemAdd:
+		r.handleAddItem(item)
 	case CollectionItemDelete:
 		r.handleDeleteSelectedItem(item)
 	case CollectionItemClone:
@@ -184,6 +186,40 @@ func (r *Root) handleRenameSelectedItem(item *state.CollectionItem) {
 	m := NewTextInputModal("Rename Item", text, "New Name", r.renameSelectedItem, r.hideCurrentModal)
 
 	r.showModal(m.Widget())
+}
+
+func (r *Root) handleAddItem(item *state.CollectionItem) {
+	parent := item
+	if !item.IsGroup {
+		parent = item.Parent
+	}
+
+	// generate a unique name amongst the children of this group
+	unique := func(name string) bool {
+		for _, i := range parent.Children {
+			if i.Name == name {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	name := ""
+	for i := 1; i > 0; i++ {
+		name = fmt.Sprintf("Request %d", i)
+		if unique(name) {
+			break
+		}
+	}
+
+	newItem := state.NewCollectionRequest(name, "GET", "", parent)
+	parent.AddChild(newItem)
+
+	r.state.Get().SelectedItem = newItem
+	r.state.Get().ActiveItem = newItem
+	r.collection.Reload()
+	r.content.Reload()
 }
 
 func (r *Root) handleDeleteSelectedItem(item *state.CollectionItem) {
