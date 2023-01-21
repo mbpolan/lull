@@ -125,8 +125,6 @@ func (r *Root) handleControlKeyAction(code tcell.Key, key rune) bool {
 		r.sendCurrentRequest()
 	case tcell.KeyCtrlS:
 		r.showSaveCurrentRequest()
-	case tcell.KeyCtrlQ:
-		application.Stop()
 	default:
 		return false
 	}

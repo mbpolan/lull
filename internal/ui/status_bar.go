@@ -63,7 +63,7 @@ func (s *StatusBar) prefixCommonLabels() {
 func (s *StatusBar) suffixCommonLabels() {
 	s.addLabel("Save [⌃S]")
 	s.addLabel("Send [⌃G]")
-	s.addLabel("Quit [⌃Q]")
+	s.addLabel("Quit [⌃C]")
 }
 
 func (s *StatusBar) addLabel(text string) {
