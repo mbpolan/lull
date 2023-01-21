@@ -26,7 +26,6 @@ type ResponseView struct {
 	headers      *tview.Table
 	focusHolder  *tview.TextView
 	focusManager *util.FocusManager
-	sbSequences  []events.StatusBarContextChangeSequence
 	state        *state.Manager
 }
 
@@ -37,26 +36,12 @@ func NewResponseView(state *state.Manager) *ResponseView {
 	p.build()
 	p.Reload()
 
-	p.sbSequences = []events.StatusBarContextChangeSequence{
-		{
-			Label:       "Body",
-			KeySequence: "1",
-		},
-		{
-			Label:       "Headers",
-			KeySequence: "2",
-		},
-	}
-
 	return p
 }
 
 // SetFocus sets the focus on this component.
 func (p *ResponseView) SetFocus() {
-	events.Dispatcher().Post(events.EventStatusBarContextChange, p, &events.StatusBarContextChangeData{
-		Fields: p.sbSequences,
-	})
-
+	p.postKeyboardSequences()
 	GetApplication().SetFocus(p.Widget())
 }
 
@@ -165,8 +150,10 @@ func (p *ResponseView) switchToPage(view string) {
 func (p *ResponseView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == '1' {
 		p.switchToPage(responseViewBody)
+		p.postKeyboardSequences()
 	} else if event.Rune() == '2' {
 		p.switchToPage(responseViewHeaders)
+		p.postKeyboardSequences()
 	} else {
 		return event
 	}
@@ -218,4 +205,38 @@ func (p *ResponseView) statusTextForCode(code int) string {
 	default:
 		return ""
 	}
+}
+
+func (p *ResponseView) keyboardSequences() []events.StatusBarContextChangeSequence {
+	var seq []events.StatusBarContextChangeSequence
+	page, _ := p.pages.GetFrontPage()
+
+	switch page {
+	case responseViewBody:
+		seq = []events.StatusBarContextChangeSequence{
+			{
+				Label:       "Headers",
+				KeySequence: "2",
+			},
+		}
+	case responseViewHeaders:
+		seq = []events.StatusBarContextChangeSequence{
+			{
+				Label:       "Body",
+				KeySequence: "1",
+			},
+		}
+	default:
+		break
+	}
+
+	return seq
+}
+
+func (p *ResponseView) postKeyboardSequences() {
+	seq := p.keyboardSequences()
+
+	events.Dispatcher().Post(events.EventStatusBarContextChange, p, &events.StatusBarContextChangeData{
+		Fields: seq,
+	})
 }
