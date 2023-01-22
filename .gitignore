@@ -19,5 +19,6 @@ go.work
 
 # Other
 .idea
-build/
 .DS_Store
+build/
+dist/

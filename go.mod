@@ -7,6 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/rivo/tview v0.0.0-20221217182043-ccce554c3803
 	github.com/stretchr/testify v1.8.1
+	golang.org/x/exp v0.0.0-20230113213754-f9f960f08ad4
 )
 
 require (
@@ -16,7 +17,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.2 // indirect
-	golang.org/x/exp v0.0.0-20230113213754-f9f960f08ad4 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 	golang.org/x/text v0.3.7 // indirect
