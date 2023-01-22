@@ -403,8 +403,10 @@ func (r *Root) handleRequestFinished(item *state.CollectionItem, result *network
 
 	r.state.Get().LastError = nil
 	item.Result = &state.HTTPResult{
-		Response: result.Response,
-		Duration: result.EndTime.Sub(result.StartTime),
+		Response:     result.Response,
+		Payload:      result.Payload,
+		PayloadError: result.PayloadError,
+		Duration:     result.EndTime.Sub(result.StartTime),
 	}
 
 	GetApplication().QueueUpdateDraw(func() {

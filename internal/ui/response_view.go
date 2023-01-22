@@ -69,10 +69,16 @@ func (p *ResponseView) Reload() {
 		body := ""
 
 		// get a parser that's most suitable for the response and format the body
-		parser := parsers.GetBodyParser(resp)
-		body, err := parser.Parse(resp)
-		if err != nil {
-			body = fmt.Sprintf("[red]%+v", err)
+		if res.PayloadError != nil {
+			body = fmt.Sprintf("[red]%s", res.PayloadError.Error())
+		} else {
+			parser := parsers.GetBodyParser(resp)
+			parsedBody, err := parser.ParseBytes(res.Payload)
+			if err != nil {
+				body = fmt.Sprintf("[red]%s", string(res.Payload))
+			} else {
+				body = parsedBody
+			}
 		}
 
 		p.status.SetText(p.statusLine(resp.StatusCode, resp.Status))
@@ -119,6 +125,7 @@ func (p *ResponseView) build() {
 	p.flex.AddItem(p.pages, 0, 1, false)
 
 	p.body = tview.NewTextView()
+	p.body.SetDynamicColors(true)
 	p.headers = tview.NewTable()
 
 	p.pages.AddAndSwitchToPage(responseViewBody, p.body, true)

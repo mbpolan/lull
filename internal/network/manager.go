@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/mbpolan/lull/internal/state"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -25,10 +26,12 @@ type Manager struct {
 
 // Result contains the outcome of an HTTP request.
 type Result struct {
-	Response  *http.Response
-	Error     error
-	StartTime time.Time
-	EndTime   time.Time
+	Response     *http.Response
+	Payload      []byte
+	PayloadError error
+	Error        error
+	StartTime    time.Time
+	EndTime      time.Time
 }
 
 // NewNetworkManager returns a new instance of Manager with the given handler function. The handler will be invoked
@@ -71,11 +74,18 @@ func (m *Manager) SendRequest(item *state.CollectionItem) error {
 
 	go func() {
 		res, err := m.client.Exchange(m.ctx, item)
+
+		// read the entire body and capture any errors in the process
+		payload, payloadErr := io.ReadAll(res.Body)
+		defer res.Body.Close()
+
 		m.handler(m.currentItem, &Result{
-			Response:  res,
-			Error:     err,
-			StartTime: m.startTime,
-			EndTime:   time.Now(),
+			Response:     res,
+			Error:        err,
+			Payload:      payload,
+			PayloadError: payloadErr,
+			StartTime:    m.startTime,
+			EndTime:      time.Now(),
 		})
 
 		m.resetCurrent()

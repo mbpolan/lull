@@ -29,8 +29,10 @@ type RequestBody struct {
 
 // HTTPResult stores a http.Response and its associated metadata for a collection item.
 type HTTPResult struct {
-	Response *http.Response
-	Duration time.Duration
+	Response     *http.Response
+	Payload      []byte
+	PayloadError error
+	Duration     time.Duration
 }
 
 // NewCollectionGroup returns a CollectionGroup with a given name and no children. An optional parent may be provided
