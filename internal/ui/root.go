@@ -8,8 +8,10 @@ import (
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/network"
 	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 	"strings"
+	"time"
 )
 
 var application *tview.Application
@@ -26,16 +28,18 @@ type Root struct {
 	collection   *Collection
 	content      *Content
 	StatusBar    *StatusBar
+	buildMeta    *util.BuildMeta
 	currentModal string
 	network      *network.Manager
 	state        *state.Manager
 }
 
 // NewRoot returns a new Root instance.
-func NewRoot(app *tview.Application, stateManager *state.Manager) *Root {
+func NewRoot(app *tview.Application, stateManager *state.Manager, buildMeta *util.BuildMeta) *Root {
 	application = app
 
 	r := new(Root)
+	r.buildMeta = buildMeta
 	r.currentModal = ""
 	r.network = network.NewNetworkManager(r.handleRequestFinished)
 	r.state = stateManager
@@ -113,10 +117,10 @@ func (r *Root) build() {
 
 func (r *Root) handleControlKeyAction(code tcell.Key, key rune) bool {
 	switch code {
+	case tcell.KeyCtrlA:
+		r.showAboutModal()
 	case tcell.KeyCtrlL:
 		r.collection.SetFocus()
-	case tcell.KeyCtrlA:
-		r.content.SetFocus(ContentURLBox)
 	case tcell.KeyCtrlR:
 		r.content.SetFocus(ContentRequestBody)
 	case tcell.KeyCtrlY:
@@ -414,4 +418,25 @@ func (r *Root) handleRequestFinished(item *state.CollectionItem, result *network
 		r.content.Reload()
 		r.state.SetDirty()
 	})
+}
+
+func (r *Root) showAboutModal() {
+	commitShort := r.buildMeta.Commit
+	if len(commitShort) > 7 {
+		commitShort = r.buildMeta.Commit[0:7]
+	}
+
+	dateFriendly := r.buildMeta.Date
+	date, err := time.Parse(time.RFC3339, r.buildMeta.Date)
+	if err == nil {
+		dateFriendly = date.Format("2006-01-02 15:04:05")
+	}
+
+	info := fmt.Sprintf("lull is a lightweight, keyboard-friendly REST\nclient. Join the development at\n")
+	info = fmt.Sprintf("%shttps://github.com/mbpolan/lull\n\n", info)
+	info = fmt.Sprintf("%sVersion %s (%s)\n", info, r.buildMeta.Version, commitShort)
+	info = fmt.Sprintf("%sBuilt on %s", info, dateFriendly)
+
+	m := NewAlertModal("About", info, "OK", r.hideCurrentModal)
+	r.showModal(m.Widget())
 }

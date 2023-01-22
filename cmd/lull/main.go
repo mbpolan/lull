@@ -6,14 +6,25 @@ import (
 	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
 	"github.com/mbpolan/lull/internal/ui"
+	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 	"os"
+	"time"
+)
+
+var (
+	version = "dev"
+	commit  = "local"
+	date    = time.Now().Format(time.RFC3339)
 )
 
 func main() {
 	// initialize supporting modules
 	events.Setup()
 	parsers.Setup()
+
+	// populate build information
+	buildMeta := util.NewBuildMeta(version, commit, date)
 
 	// determine the user's home directory to save app state file in
 	stateSavePath, err := os.UserHomeDir()
@@ -45,7 +56,7 @@ func main() {
 	}
 
 	app := tview.NewApplication()
-	root := ui.NewRoot(app, stateManager)
+	root := ui.NewRoot(app, stateManager, buildMeta)
 
 	app.SetRoot(root.Widget(), true)
 	app.SetFocus(root.Widget())
