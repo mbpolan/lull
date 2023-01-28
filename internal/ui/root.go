@@ -114,6 +114,9 @@ func (r *Root) build() {
 
 	// create pages containing the main content and various modals that can be opened
 	r.pages.AddAndSwitchToPage(rootPageMain, r.flex, true)
+
+	// set initial focus on the url box
+	r.content.SetFocus(ContentURLBox)
 }
 
 func (r *Root) handleControlKeyAction(code tcell.Key, key rune) bool {
