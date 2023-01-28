@@ -3,10 +3,12 @@ package state
 import (
 	"encoding/json"
 	"github.com/google/uuid"
+	"github.com/mbpolan/lull/internal/ui"
 )
 
 // AppState represents the state of the application.
 type AppState struct {
+	Focused      *ui.Component
 	LastError    error `json:"-"` // do not serialize
 	Collection   *CollectionItem
 	SelectedItem *CollectionItem
