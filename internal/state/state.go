@@ -3,12 +3,12 @@ package state
 import (
 	"encoding/json"
 	"github.com/google/uuid"
-	"github.com/mbpolan/lull/internal/ui"
+	"github.com/rivo/tview"
 )
 
 // AppState represents the state of the application.
 type AppState struct {
-	Focused      *ui.Component
+	Focused      tview.Primitive
 	LastError    error `json:"-"` // do not serialize
 	Collection   *CollectionItem
 	SelectedItem *CollectionItem

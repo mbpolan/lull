@@ -30,6 +30,7 @@ type Root struct {
 	StatusBar    *StatusBar
 	buildMeta    *util.BuildMeta
 	currentModal string
+	lastFocus    tview.Primitive
 	network      *network.Manager
 	state        *state.Manager
 }
@@ -360,11 +361,17 @@ func (r *Root) setCurrentRequest(item *state.CollectionItem) {
 }
 
 func (r *Root) showModal(modal tview.Primitive) {
+	r.lastFocus = GetApplication().GetFocus()
 	r.pages.AddPage(rootPageModal, modal, true, true)
 }
 
 func (r *Root) hideCurrentModal() {
 	r.pages.RemovePage(rootPageModal)
+
+	if r.lastFocus != nil {
+		GetApplication().SetFocus(r.lastFocus)
+		r.lastFocus = nil
+	}
 }
 
 func (r *Root) sendCurrentRequest() {
