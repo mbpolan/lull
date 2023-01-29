@@ -84,10 +84,17 @@ func (m *BaseInputModal) build(title string, text string, accept func()) int {
 		height = 5
 	}
 
-	m.grid.AddItem(m.infoText, 0, 0, 1, 2, 0, 0, false)
+	row := 0
+
+	// don't add the info text area if no text is provided
+	if text != "" {
+		m.grid.AddItem(m.infoText, 0, 0, 1, 2, 0, 0, false)
+		row++
+	}
+
 	m.Modal = NewModal(m.grid, width, height)
 
-	return 1
+	return row
 }
 
 func (m *BaseInputModal) buildButtons(row int, buttons BaseInputModalButton) {
