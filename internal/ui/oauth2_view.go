@@ -39,6 +39,9 @@ func (a *OAuth2View) Widget() tview.Primitive {
 func (a *OAuth2View) build() {
 	a.grid = tview.NewGrid()
 
+	// give the input fields as must space as possible, fix the size of the labels
+	a.grid.SetColumns(15, -1)
+
 	a.tokenURL = tview.NewInputField()
 	a.clientID = tview.NewInputField()
 	a.clientSecret = tview.NewInputField()
