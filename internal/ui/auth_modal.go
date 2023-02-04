@@ -1,8 +1,15 @@
 package ui
 
-import "github.com/rivo/tview"
+import (
+	"github.com/mbpolan/lull/internal/state"
+	"github.com/rivo/tview"
+)
 
-type AuthModalAcceptHandler func()
+type AuthModalAcceptHandler func(auth state.RequestAuthentication)
+
+const (
+	authTypeOAuth2Option = "OAuth2"
+)
 
 // AuthModal shows various authentication schemes that can be configured for requests.
 type AuthModal struct {
@@ -36,7 +43,7 @@ func (m *AuthModal) build() {
 
 	// set up authentication scheme options
 	m.authType = tview.NewDropDown()
-	m.authType.SetOptions([]string{"OAuth2"}, m.handleAuthTypeChange)
+	m.authType.SetOptions([]string{authTypeOAuth2Option}, m.handleAuthTypeChange)
 	m.authType.SetLabel("Authentication Type ")
 	m.authType.SetCurrentOption(0) // only possibility right now
 
@@ -53,7 +60,7 @@ func (m *AuthModal) build() {
 	// prepare base input modal
 	m.BaseInputModal.width = 75
 	m.BaseInputModal.height = 14
-	row := m.BaseInputModal.build("Authentication", "", m.onAccept)
+	row := m.BaseInputModal.build("Authentication", "", m.handleAccept)
 
 	// add this modal's content, set up buttons and adjust rows so that content has maximum space
 	m.grid.AddItem(m.flex, row, 0, 1, 2, 0, 0, true)
@@ -68,4 +75,21 @@ func (m *AuthModal) build() {
 
 func (m *AuthModal) handleAuthTypeChange(text string, index int) {
 	// TODO
+}
+
+func (m *AuthModal) handleAccept() {
+	var auth state.RequestAuthentication
+
+	// get the authentication parameters from the subview
+	_, option := m.authType.GetCurrentOption()
+	switch option {
+	case authTypeOAuth2Option:
+		auth = m.oauth2.Data()
+	default:
+		break
+	}
+
+	if auth != nil {
+		m.onAccept(auth)
+	}
 }

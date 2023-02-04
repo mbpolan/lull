@@ -1,6 +1,9 @@
 package ui
 
-import "github.com/rivo/tview"
+import (
+	"github.com/mbpolan/lull/internal/state"
+	"github.com/rivo/tview"
+)
 
 // OAuth2View contains form fields that represent an OAuth2 client credentials configuration.
 type OAuth2View struct {
@@ -18,6 +21,14 @@ func NewOAuth2View() *OAuth2View {
 	v.build()
 
 	return v
+}
+
+// Data returns the authentication data provided in the view.
+func (a *OAuth2View) Data() state.RequestAuthentication {
+	auth := state.NewOAuth2RequestAuthentication(a.tokenURL.GetText(), a.clientID.GetText(), a.clientSecret.GetText(),
+		a.grantType.GetText(), a.scope.GetText())
+
+	return auth
 }
 
 // FocusPrimitives returns a slice of primitives that should receive focus.

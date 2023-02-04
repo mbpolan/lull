@@ -9,16 +9,17 @@ import (
 
 // CollectionItem is a grouping or a single, saved REST API request with a given name.
 type CollectionItem struct {
-	UUID        uuid.UUID
-	IsGroup     bool
-	Name        string
-	Method      string
-	URL         string
-	Headers     map[string][]string
-	RequestBody *RequestBody
-	Result      *HTTPResult     `json:"-"` // do not serialize
-	Parent      *CollectionItem `json:"-"` // prepare circular references when serializing
-	Children    []*CollectionItem
+	UUID           uuid.UUID
+	IsGroup        bool
+	Name           string
+	Method         string
+	URL            string
+	Headers        map[string][]string
+	RequestBody    *RequestBody
+	Authentication RequestAuthentication
+	Result         *HTTPResult     `json:"-"` // do not serialize
+	Parent         *CollectionItem `json:"-"` // prepare circular references when serializing
+	Children       []*CollectionItem
 }
 
 // RequestBody stores the request body and associated content information.
