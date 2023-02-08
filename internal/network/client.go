@@ -10,6 +10,8 @@ import (
 	"sync"
 )
 
+type AuthFunc func(req *http.Request) error
+
 type Client struct {
 	client *http.Client
 	mutex  sync.Mutex
@@ -22,7 +24,11 @@ func NewClient() *Client {
 	return c
 }
 
-func (c *Client) Exchange(ctx context.Context, item *state.CollectionItem) (*http.Response, error) {
+func (c *Client) ExchangeRequest(req *http.Request) (*http.Response, error) {
+	return c.client.Do(req)
+}
+
+func (c *Client) Exchange(ctx context.Context, item *state.CollectionItem, authFunc AuthFunc) (*http.Response, error) {
 	uri, err := url.Parse(item.URL)
 	if err != nil {
 		return nil, err
@@ -41,6 +47,13 @@ func (c *Client) Exchange(ctx context.Context, item *state.CollectionItem) (*htt
 		URL:    uri,
 		Header: item.Headers,
 		Body:   data,
+	}
+
+	if authFunc != nil {
+		err = authFunc(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	req = req.WithContext(ctx)

@@ -73,7 +73,13 @@ func (m *Manager) SendRequest(item *state.CollectionItem) error {
 	m.mutex.Unlock()
 
 	go func() {
-		res, err := m.client.Exchange(m.ctx, item)
+		authFunc, err := m.authenticate(item)
+		if err != nil {
+			// TODO
+			panic(err)
+		}
+
+		res, err := m.client.Exchange(m.ctx, item, authFunc)
 
 		// read the entire body and capture any errors in the process
 		payload, payloadErr := io.ReadAll(res.Body)
@@ -105,6 +111,27 @@ func (m *Manager) CancelCurrent() {
 
 	m.cancelFunc()
 	m.pending = false
+}
+
+func (m *Manager) authenticate(item *state.CollectionItem) (func(req *http.Request) error, error) {
+	auth := item.Authentication
+	if auth == nil {
+		return nil, nil
+	}
+
+	authReq, err := auth.Prepare()
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := m.client.ExchangeRequest(authReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(req *http.Request) error {
+		return auth.Apply(req, res)
+	}, nil
 }
 
 // resetCurrent cancels the currently in-flight request and resets bookkeeping state.
