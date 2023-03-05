@@ -31,6 +31,15 @@ func (a *OAuth2View) Data() state.RequestAuthentication {
 	return auth
 }
 
+// Set applies the values for the OAuth2 authentication scheme.
+func (a *OAuth2View) Set(data *state.OAuth2RequestAuthentication) {
+	a.tokenURL.SetText(data.TokenURL)
+	a.clientID.SetText(data.ClientID)
+	a.clientSecret.SetText(data.ClientSecret)
+	a.grantType.SetText(data.GrantType)
+	a.scope.SetText(data.Scope)
+}
+
 // FocusPrimitives returns a slice of primitives that should receive focus.
 func (a *OAuth2View) FocusPrimitives() []tview.Primitive {
 	return []tview.Primitive{
@@ -73,6 +82,12 @@ func (a *OAuth2View) build() {
 
 	a.grid.AddItem(a.label("Scope"), 4, 0, 1, 1, 0, 0, false)
 	a.grid.AddItem(a.scope, 4, 1, 1, 1, 0, 0, false)
+
+	a.tokenURL.SetText("https://oauth2.googleapis.com/token")
+	a.clientID.SetText("foo")
+	a.clientSecret.SetText("bar")
+	a.grantType.SetText("client_credentials")
+	a.scope.SetText("")
 }
 
 func (a *OAuth2View) label(text string) *tview.TextView {

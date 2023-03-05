@@ -16,6 +16,7 @@ const requestViewTitle = "Request"
 
 const requestViewBody = "body"
 const requestViewHeaders = "headers"
+const requestViewAuthentication = "authentication"
 const requestViewModal = "modal"
 
 const headerTableSeparator = "; "
@@ -32,6 +33,7 @@ type RequestView struct {
 	flex         *tview.Flex
 	pages        *tview.Pages
 	body         *tview.TextArea
+	auth         *AuthView
 	contentType  *tview.DropDown
 	headers      *tview.Table
 	focusHolder  *tview.TextView
@@ -113,6 +115,9 @@ func (p *RequestView) Reload() {
 	if len(item.Headers) > 0 {
 		p.headers.Select(1, 0)
 	}
+
+	// apply authentication
+	p.auth.Set(item)
 }
 
 // Widget returns a primitive widget containing this component.
@@ -142,12 +147,15 @@ func (p *RequestView) build() {
 	bodyFlex.AddItem(p.contentType, 1, 0, false)
 	bodyFlex.AddItem(p.body, 0, 1, true)
 
+	p.auth = NewAuthView()
+
 	p.headers = tview.NewTable()
 	p.headers.SetSelectable(true, false)
 	p.headers.SetSelectedFunc(p.showEditHeaderModal)
 
 	p.pages.AddAndSwitchToPage(requestViewBody, bodyFlex, true)
 	p.pages.AddPage(requestViewHeaders, p.headers, true, false)
+	p.pages.AddPage(requestViewAuthentication, p.auth.Widget(), true, false)
 
 	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.focusHolder, p.focusHolder, p.contentType, p.body)
 	p.focusManager.AddArrowNavigation(util.FocusUp, util.FocusLeft, util.FocusRight)
@@ -193,6 +201,9 @@ func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	} else if event.Rune() == '2' {
 		p.switchToPage(requestViewHeaders)
 		GetApplication().SetFocus(p.headers)
+	} else if event.Rune() == '3' {
+		p.switchToPage(requestViewAuthentication)
+		GetApplication().SetFocus(p.auth.Widget())
 	} else if event.Rune() == '+' {
 		p.showAddHeaderModal()
 	} else if event.Rune() == '-' {
@@ -411,6 +422,10 @@ func (p *RequestView) keyboardSequences() []events.StatusBarContextChangeSequenc
 				KeySequence: "2",
 			},
 			{
+				Label:       "Authentication",
+				KeySequence: "3",
+			},
+			{
 				Label:       "Format",
 				KeySequence: "f",
 			},
@@ -420,6 +435,10 @@ func (p *RequestView) keyboardSequences() []events.StatusBarContextChangeSequenc
 			{
 				Label:       "Body",
 				KeySequence: "1",
+			},
+			{
+				Label:       "Authentication",
+				KeySequence: "3",
 			},
 			{
 				Label:       "Add header",
@@ -432,6 +451,17 @@ func (p *RequestView) keyboardSequences() []events.StatusBarContextChangeSequenc
 			{
 				Label:       "Edit header",
 				KeySequence: "⏎",
+			},
+		}
+	case requestViewAuthentication:
+		seq = []events.StatusBarContextChangeSequence{
+			{
+				Label:       "Body",
+				KeySequence: "1",
+			},
+			{
+				Label:       "Headers",
+				KeySequence: "2",
 			},
 		}
 	default:
