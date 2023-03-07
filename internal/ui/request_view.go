@@ -147,7 +147,7 @@ func (p *RequestView) build() {
 	bodyFlex.AddItem(p.contentType, 1, 0, false)
 	bodyFlex.AddItem(p.body, 0, 1, true)
 
-	p.auth = NewAuthView()
+	p.auth = NewAuthView(p.handleAuthenticationChange)
 
 	p.headers = tview.NewTable()
 	p.headers.SetSelectable(true, false)
@@ -157,7 +157,8 @@ func (p *RequestView) build() {
 	p.pages.AddPage(requestViewHeaders, p.headers, true, false)
 	p.pages.AddPage(requestViewAuthentication, p.auth.Widget(), true, false)
 
-	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.focusHolder, p.focusHolder, p.contentType, p.body)
+	p.focusManager = util.NewFocusManager(p, GetApplication(), events.Dispatcher(), p.focusHolder)
+	p.focusManager.SetName("request_view")
 	p.focusManager.AddArrowNavigation(util.FocusUp, util.FocusLeft, util.FocusRight)
 	p.focusManager.SetFilter(p.filterKeyEvent)
 	p.focusManager.SetHandler(p.handleKeyEvent)
@@ -181,6 +182,19 @@ func (p *RequestView) setTitle() {
 }
 
 func (p *RequestView) switchToPage(view string) {
+	// change the set of focus primitives based on the newly selected view
+	switch view {
+	case requestViewBody:
+		p.focusManager.SetPrimitives(p.focusHolder, p.contentType, p.body)
+		GetApplication().SetFocus(p.contentType)
+	case requestViewHeaders:
+		p.focusManager.SetPrimitives(p.focusHolder, p.headers)
+		GetApplication().SetFocus(p.headers)
+	case requestViewAuthentication:
+		p.focusManager.SetPrimitives(p.focusHolder)
+		GetApplication().SetFocus(p.auth.Widget())
+	}
+
 	p.pages.SwitchToPage(view)
 	p.postKeyboardSequences()
 	p.setTitle()
@@ -200,10 +214,8 @@ func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 		p.switchToPage(requestViewBody)
 	} else if event.Rune() == '2' {
 		p.switchToPage(requestViewHeaders)
-		GetApplication().SetFocus(p.headers)
 	} else if event.Rune() == '3' {
 		p.switchToPage(requestViewAuthentication)
-		GetApplication().SetFocus(p.auth.Widget())
 	} else if event.Rune() == '+' {
 		p.showAddHeaderModal()
 	} else if event.Rune() == '-' {
@@ -357,6 +369,19 @@ func (p *RequestView) handleEditHeader(key string, value string) {
 
 	p.hideModal()
 	p.Reload()
+}
+
+func (p *RequestView) handleAuthenticationChange(data state.RequestAuthentication) {
+	item := p.state.Get().ActiveItem
+	if item == nil {
+		return
+	}
+
+	if data == nil {
+		item.Authentication = nil
+	} else if oauth2 := data.(*state.OAuth2RequestAuthentication); oauth2 != nil {
+		item.Authentication = oauth2
+	}
 }
 
 func (p *RequestView) hideModal() {

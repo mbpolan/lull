@@ -7,7 +7,10 @@ import (
 	"github.com/rivo/tview"
 )
 
+type AuthViewChangeHandler func(data state.RequestAuthentication)
+
 const (
+	authTypeNone         = "None"
 	authTypeOAuth2Option = "OAuth2"
 )
 
@@ -18,13 +21,16 @@ type AuthView struct {
 	authType     *tview.DropDown
 	oauth2       *OAuth2View
 	focusManager *util.FocusManager
+	handler      AuthViewChangeHandler
 }
 
-// NewAuthView returns a new AuthModal instance.
-func NewAuthView() *AuthView {
-	m := new(AuthView)
-	m.build()
+// NewAuthView returns a new AuthModal instance configured with a change handler function.
+func NewAuthView(handler AuthViewChangeHandler) *AuthView {
+	m := &AuthView{
+		handler: handler,
+	}
 
+	m.build()
 	return m
 }
 
@@ -47,8 +53,10 @@ func (a *AuthView) Data() state.RequestAuthentication {
 
 // Set applies the values from the CollectionItem to the view.
 func (a *AuthView) Set(item *state.CollectionItem) {
-	if oauth2 := item.Authentication.(*state.OAuth2RequestAuthentication); oauth2 != nil {
+	if item.Authentication == nil {
 		a.authType.SetCurrentOption(0)
+	} else if oauth2 := item.Authentication.(*state.OAuth2RequestAuthentication); oauth2 != nil {
+		a.authType.SetCurrentOption(1)
 		a.oauth2.Set(oauth2)
 	}
 }
@@ -59,27 +67,47 @@ func (a *AuthView) build() {
 
 	// set up authentication scheme options
 	a.authType = tview.NewDropDown()
-	a.authType.SetOptions([]string{authTypeOAuth2Option}, a.handleAuthTypeChange)
+	a.authType.SetOptions([]string{authTypeNone, authTypeOAuth2Option}, a.handleAuthTypeChange)
 	a.authType.SetLabel("Authentication Type ")
-	a.authType.SetCurrentOption(0) // only possibility right now
+
+	a.focusManager = util.NewFocusManager(a, GetApplication(), events.Dispatcher(), a.authType)
+	a.focusManager.SetName("auth_view")
 
 	// create views for various schemes
-	a.oauth2 = NewOAuth2View()
+	a.oauth2 = NewOAuth2View(a.handleParameterChange, a.focusManager)
 
 	// add scheme views to pages and show a default one
 	a.pages = tview.NewPages()
-	a.pages.AddAndSwitchToPage("oauth2", a.oauth2.Widget(), true)
+	a.pages.AddAndSwitchToPage(authTypeNone, tview.NewBox(), true)
+	a.pages.AddPage(authTypeOAuth2Option, a.oauth2.Widget(), true, false)
 
-	a.flex.AddItem(a.authType, 0, 1, true)
-	a.flex.AddItem(a.pages, 0, 10, false)
+	a.flex.AddItem(a.authType, 1, 0, true)
+	a.flex.AddItem(a.pages, 0, 1, false)
 
 	// set up focus manager based on current scheme view's primitives
-	a.focusManager = util.NewFocusManager(a, GetApplication(), events.Dispatcher(), a.authType, a.oauth2.FocusPrimitives()...)
 	a.focusManager.AddArrowNavigation(util.FocusUp, util.FocusLeft, util.FocusRight)
 
 	a.flex.SetInputCapture(a.focusManager.HandleKeyEvent)
+
+	// set defaults after the ui has been built
+	a.authType.SetCurrentOption(0)
 }
 
 func (a *AuthView) handleAuthTypeChange(text string, index int) {
-	// TODO
+	a.pages.SwitchToPage(text)
+
+	// notify the handler func that parameters have changed
+	switch text {
+	case authTypeNone:
+		a.handleParameterChange(nil)
+		a.focusManager.SetPrimitives(a.authType)
+	case authTypeOAuth2Option:
+		a.focusManager.SetPrimitives(append(a.oauth2.FocusPrimitives(), a.authType)...)
+		a.oauth2.SetFocus()
+		a.handleParameterChange(a.oauth2.Data())
+	}
+}
+
+func (a *AuthView) handleParameterChange(data *state.OAuth2RequestAuthentication) {
+	a.handler(data)
 }

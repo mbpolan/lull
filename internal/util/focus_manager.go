@@ -9,8 +9,11 @@ import (
 type FocusFilterResult int
 
 const (
+	// FocusPreHandlePropagate indicates the event should be propagated up the focus chain.
 	FocusPreHandlePropagate FocusFilterResult = iota
+	// FocusPreHandleIgnore indicates the event should not be handled at all.
 	FocusPreHandleIgnore
+	// FocusPreHandleProcess indicates the event should be handled by the current focus manager as usual.
 	FocusPreHandleProcess
 )
 
@@ -29,6 +32,7 @@ type FocusManagerHandler func(event *tcell.EventKey) *tcell.EventKey
 // FocusManager is a utility that manages and handles changing focus amongst a set of primitives. An optional parent
 // may be passed that will receive focus when the escape key is pressed.
 type FocusManager struct {
+	name             string
 	sender           any
 	application      *tview.Application
 	dispatcher       *events.EventDispatcher
@@ -55,6 +59,11 @@ func NewFocusManager(sender any, application *tview.Application, dispatcher *eve
 	}
 
 	return f
+}
+
+// SetName sets the name of the focus manager to distinguish it from others.
+func (f *FocusManager) SetName(name string) {
+	f.name = name
 }
 
 // SetLenientArrowNavigation allows arrow navigation to occur without requiring the parent primitive to have focus.
@@ -90,6 +99,11 @@ func (f *FocusManager) AddArrowNavigation(directions ...FocusDirection) {
 	}
 }
 
+// SetPrimitives sets the primitives that should receive focus. This will replace any previously configured primitives.
+func (f *FocusManager) SetPrimitives(primitives ...tview.Primitive) {
+	f.primitives = primitives
+}
+
 // HandleKeyEvent processes a keyboard event and changes which primitive is focused.
 func (f *FocusManager) HandleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	// run the filter first to determine what to do with this event
@@ -116,9 +130,10 @@ func (f *FocusManager) HandleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 
 		if focused > -1 {
 			f.application.SetFocus(f.primitives[(focused+1)%len(f.primitives)])
+			return nil
 		}
 
-		return nil
+		return event
 	} else if event.Key() == tcell.KeyEscape && f.parent != nil {
 		f.application.SetFocus(f.parent)
 		return nil

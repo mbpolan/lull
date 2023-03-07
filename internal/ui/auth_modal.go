@@ -34,7 +34,7 @@ func (m *AuthModal) build() {
 	m.flex = tview.NewFlex()
 	m.flex.SetDirection(tview.FlexRow)
 
-	m.auth = NewAuthView()
+	m.auth = NewAuthView(nil)
 	m.flex.AddItem(m.auth.Widget(), 0, 1, true)
 
 	// prepare base input modal

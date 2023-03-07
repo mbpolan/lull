@@ -2,8 +2,11 @@ package ui
 
 import (
 	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 )
+
+type OAuth2ChangeHandler func(data *state.OAuth2RequestAuthentication)
 
 // OAuth2View contains form fields that represent an OAuth2 client credentials configuration.
 type OAuth2View struct {
@@ -13,18 +16,23 @@ type OAuth2View struct {
 	clientSecret *tview.InputField
 	grantType    *tview.InputField
 	scope        *tview.InputField
+	focusManager *util.FocusManager
+	handler      OAuth2ChangeHandler
 }
 
-// NewOAuth2View returns a new OAuth2View instance.
-func NewOAuth2View() *OAuth2View {
-	v := new(OAuth2View)
-	v.build()
+// NewOAuth2View returns a new OAuth2View instance configured with a change handler function.
+func NewOAuth2View(handler OAuth2ChangeHandler, manager *util.FocusManager) *OAuth2View {
+	v := &OAuth2View{
+		handler:      handler,
+		focusManager: manager,
+	}
 
+	v.build()
 	return v
 }
 
 // Data returns the authentication data provided in the view.
-func (a *OAuth2View) Data() state.RequestAuthentication {
+func (a *OAuth2View) Data() *state.OAuth2RequestAuthentication {
 	auth := state.NewOAuth2RequestAuthentication(a.tokenURL.GetText(), a.clientID.GetText(), a.clientSecret.GetText(),
 		a.grantType.GetText(), a.scope.GetText())
 
@@ -51,6 +59,11 @@ func (a *OAuth2View) FocusPrimitives() []tview.Primitive {
 	}
 }
 
+// SetFocus sets the focus on this component.
+func (a *OAuth2View) SetFocus() {
+	GetApplication().SetFocus(a.FocusPrimitives()[0])
+}
+
 // Widget returns a primitive widget containing this component.
 func (a *OAuth2View) Widget() tview.Primitive {
 	return a.grid
@@ -61,12 +74,22 @@ func (a *OAuth2View) build() {
 
 	// give the input fields as must space as possible, fix the size of the labels
 	a.grid.SetColumns(15, -1)
+	a.grid.SetRows(2, 2, 2, 2, 2, -1)
 
 	a.tokenURL = tview.NewInputField()
+	a.tokenURL.SetChangedFunc(a.handleParameterChange)
+
 	a.clientID = tview.NewInputField()
+	a.clientID.SetChangedFunc(a.handleParameterChange)
+
 	a.clientSecret = tview.NewInputField()
+	a.clientSecret.SetChangedFunc(a.handleParameterChange)
+
 	a.grantType = tview.NewInputField()
+	a.grantType.SetChangedFunc(a.handleParameterChange)
+
 	a.scope = tview.NewInputField()
+	a.scope.SetChangedFunc(a.handleParameterChange)
 
 	a.grid.AddItem(a.label("Token URL"), 0, 0, 1, 1, 0, 0, false)
 	a.grid.AddItem(a.tokenURL, 0, 1, 1, 1, 0, 0, true)
@@ -83,15 +106,22 @@ func (a *OAuth2View) build() {
 	a.grid.AddItem(a.label("Scope"), 4, 0, 1, 1, 0, 0, false)
 	a.grid.AddItem(a.scope, 4, 1, 1, 1, 0, 0, false)
 
-	a.tokenURL.SetText("https://oauth2.googleapis.com/token")
-	a.clientID.SetText("foo")
-	a.clientSecret.SetText("bar")
-	a.grantType.SetText("client_credentials")
-	a.scope.SetText("")
+	// fill remaining vertical space (TODO: any other way to do this?)
+	a.grid.AddItem(tview.NewBox(), 5, 1, 1, 2, 0, 0, false)
+
+	a.tokenURL.SetInputCapture(a.focusManager.HandleKeyEvent)
+	a.clientID.SetInputCapture(a.focusManager.HandleKeyEvent)
+	a.clientSecret.SetInputCapture(a.focusManager.HandleKeyEvent)
+	a.grantType.SetInputCapture(a.focusManager.HandleKeyEvent)
+	a.scope.SetInputCapture(a.focusManager.HandleKeyEvent)
 }
 
 func (a *OAuth2View) label(text string) *tview.TextView {
 	t := tview.NewTextView()
 	t.SetText(text)
 	return t
+}
+
+func (a *OAuth2View) handleParameterChange(_ string) {
+	a.handler(a.Data())
 }
