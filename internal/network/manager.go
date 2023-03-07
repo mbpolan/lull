@@ -114,12 +114,11 @@ func (m *Manager) CancelCurrent() {
 }
 
 func (m *Manager) authenticate(item *state.CollectionItem) (func(req *http.Request) error, error) {
-	auth := item.Authentication
-	if auth == nil {
+	if item.Authentication.None() {
 		return nil, nil
 	}
 
-	authReq, err := auth.Prepare()
+	authReq, err := item.Authentication.Data.Prepare()
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +129,7 @@ func (m *Manager) authenticate(item *state.CollectionItem) (func(req *http.Reque
 	}
 
 	return func(req *http.Request) error {
-		return auth.Apply(req, res)
+		return item.Authentication.Data.Apply(req, res)
 	}, nil
 }
 

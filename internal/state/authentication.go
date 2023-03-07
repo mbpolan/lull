@@ -11,6 +11,7 @@ import (
 
 // RequestAuthentication is an interface that allows abstracts authentication scheme implementations.
 type RequestAuthentication interface {
+	Type() string
 	Prepare() (*http.Request, error)
 	Apply(req *http.Request, res *http.Response) error
 }
@@ -37,6 +38,10 @@ func NewOAuth2RequestAuthentication(tokenURL, clientID, clientSecret, grantType,
 		GrantType:    grantType,
 		Scope:        scope,
 	}
+}
+
+func (a *OAuth2RequestAuthentication) Type() string {
+	return "oauth2"
 }
 
 func (a *OAuth2RequestAuthentication) Prepare() (*http.Request, error) {

@@ -16,7 +16,7 @@ type CollectionItem struct {
 	URL            string
 	Headers        map[string][]string
 	RequestBody    *RequestBody
-	Authentication RequestAuthentication
+	Authentication ItemAuthentication
 	Result         *HTTPResult     `json:"-"` // do not serialize
 	Parent         *CollectionItem `json:"-"` // prepare circular references when serializing
 	Children       []*CollectionItem

@@ -53,9 +53,9 @@ func (a *AuthView) Data() state.RequestAuthentication {
 
 // Set applies the values from the CollectionItem to the view.
 func (a *AuthView) Set(item *state.CollectionItem) {
-	if item.Authentication == nil {
+	if item.Authentication.None() {
 		a.authType.SetCurrentOption(0)
-	} else if oauth2 := item.Authentication.(*state.OAuth2RequestAuthentication); oauth2 != nil {
+	} else if oauth2 := item.Authentication.Data.(*state.OAuth2RequestAuthentication); oauth2 != nil {
 		a.authType.SetCurrentOption(1)
 		a.oauth2.Set(oauth2)
 	}

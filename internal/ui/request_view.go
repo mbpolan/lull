@@ -378,10 +378,12 @@ func (p *RequestView) handleAuthenticationChange(data state.RequestAuthenticatio
 	}
 
 	if data == nil {
-		item.Authentication = nil
+		item.Authentication.Data = nil
 	} else if oauth2 := data.(*state.OAuth2RequestAuthentication); oauth2 != nil {
-		item.Authentication = oauth2
+		item.Authentication.Data = oauth2
 	}
+
+	p.state.SetDirty()
 }
 
 func (p *RequestView) hideModal() {
