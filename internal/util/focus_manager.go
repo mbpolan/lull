@@ -104,6 +104,11 @@ func (f *FocusManager) SetPrimitives(primitives ...tview.Primitive) {
 	f.primitives = primitives
 }
 
+// ParentHasFocus returns true if the parent primitive currently has focus, false if not.
+func (f *FocusManager) ParentHasFocus() bool {
+	return f.application.GetFocus() == f.parent
+}
+
 // HandleKeyEvent processes a keyboard event and changes which primitive is focused.
 func (f *FocusManager) HandleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
 	// run the filter first to determine what to do with this event

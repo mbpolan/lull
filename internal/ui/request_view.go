@@ -210,17 +210,19 @@ func (p *RequestView) filterKeyEvent(event *tcell.EventKey) util.FocusFilterResu
 }
 
 func (p *RequestView) handleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
-	if event.Rune() == '1' {
+	// ensure that the parent primitive has focus to prevent switching pages while the user is entering text
+	// in one of the pages themselves
+	if event.Rune() == '1' && p.focusManager.ParentHasFocus() {
 		p.switchToPage(requestViewBody)
-	} else if event.Rune() == '2' {
+	} else if event.Rune() == '2' && p.focusManager.ParentHasFocus() {
 		p.switchToPage(requestViewHeaders)
-	} else if event.Rune() == '3' {
+	} else if event.Rune() == '3' && p.focusManager.ParentHasFocus() {
 		p.switchToPage(requestViewAuthentication)
-	} else if event.Rune() == '+' {
+	} else if event.Rune() == '+' && p.headers.HasFocus() {
 		p.showAddHeaderModal()
-	} else if event.Rune() == '-' {
+	} else if event.Rune() == '-' && p.headers.HasFocus() {
 		p.removeHeader()
-	} else if event.Rune() == 'f' {
+	} else if event.Rune() == 'f' && p.focusManager.ParentHasFocus() {
 		p.formatBody()
 	} else {
 		return event
