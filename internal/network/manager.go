@@ -82,8 +82,12 @@ func (m *Manager) SendRequest(item *state.CollectionItem) error {
 		res, err := m.client.Exchange(m.ctx, item, authFunc)
 
 		// read the entire body and capture any errors in the process
-		payload, payloadErr := io.ReadAll(res.Body)
-		defer res.Body.Close()
+		var payload []byte
+		var payloadErr error
+		if err == nil {
+			payload, payloadErr = io.ReadAll(res.Body)
+			defer res.Body.Close()
+		}
 
 		m.handler(m.currentItem, &Result{
 			Response:     res,

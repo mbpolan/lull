@@ -51,10 +51,21 @@ func (a *OAuth2RequestAuthentication) Prepare() (*http.Request, error) {
 	form.Set("grant_type", a.GrantType)
 	form.Set("scope", a.Scope)
 
-	return http.NewRequest("POST", a.TokenURL, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", a.TokenURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return req, nil
 }
 
 func (a *OAuth2RequestAuthentication) Apply(req *http.Request, res *http.Response) error {
+	// validate the status code before attempting to parse the body
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to acquire token: HTTP %d", res.StatusCode)
+	}
+
 	defer res.Body.Close()
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
