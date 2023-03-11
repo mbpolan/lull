@@ -1,11 +1,11 @@
 package ui
 
 import (
-	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/state/auth"
 	"github.com/rivo/tview"
 )
 
-type AuthModalAcceptHandler func(auth state.RequestAuthentication)
+type AuthModalAcceptHandler func(auth auth.RequestAuthentication)
 
 // AuthModal presents a modal for configuring authentication schemes.
 type AuthModal struct {

@@ -127,9 +127,12 @@ func (m *Manager) authenticate(item *state.CollectionItem) (func(req *http.Reque
 		return nil, err
 	}
 
-	res, err := m.client.ExchangeRequest(authReq)
-	if err != nil {
-		return nil, err
+	var res *http.Response
+	if authReq != nil {
+		res, err = m.client.ExchangeRequest(authReq)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return func(req *http.Request) error {

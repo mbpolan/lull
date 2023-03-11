@@ -2,11 +2,12 @@ package state
 
 import (
 	"encoding/json"
+	"github.com/mbpolan/lull/internal/state/auth"
 )
 
 // ItemAuthentication is a container for authentication parameters for a collection item.
 type ItemAuthentication struct {
-	Data RequestAuthentication
+	Data auth.RequestAuthentication
 }
 
 func (i *ItemAuthentication) None() bool {
@@ -39,14 +40,22 @@ func (i *ItemAuthentication) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	if authType == (&OAuth2RequestAuthentication{}).Type() {
-		var oauth2 OAuth2RequestAuthentication
+	if authType == (&auth.OAuth2RequestAuthentication{}).Type() {
+		var oauth2 auth.OAuth2RequestAuthentication
 		err = json.Unmarshal(*raw["Data"], &oauth2)
 		if err != nil {
 			return err
 		}
 
 		i.Data = &oauth2
+	} else if authType == (&auth.BasicAuthentication{}).Type() {
+		var basic auth.BasicAuthentication
+		err = json.Unmarshal(*raw["Data"], &basic)
+		if err != nil {
+			return err
+		}
+
+		i.Data = &basic
 	}
 
 	return nil

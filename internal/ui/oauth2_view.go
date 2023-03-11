@@ -1,12 +1,12 @@
 package ui
 
 import (
-	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/state/auth"
 	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 )
 
-type OAuth2ChangeHandler func(data *state.OAuth2RequestAuthentication)
+type OAuth2ChangeHandler func(data *auth.OAuth2RequestAuthentication)
 
 // OAuth2View contains form fields that represent an OAuth2 client credentials configuration.
 type OAuth2View struct {
@@ -32,15 +32,15 @@ func NewOAuth2View(handler OAuth2ChangeHandler, manager *util.FocusManager) *OAu
 }
 
 // Data returns the authentication data provided in the view.
-func (a *OAuth2View) Data() *state.OAuth2RequestAuthentication {
-	auth := state.NewOAuth2RequestAuthentication(a.tokenURL.GetText(), a.clientID.GetText(), a.clientSecret.GetText(),
+func (a *OAuth2View) Data() *auth.OAuth2RequestAuthentication {
+	auth := auth.NewOAuth2RequestAuthentication(a.tokenURL.GetText(), a.clientID.GetText(), a.clientSecret.GetText(),
 		a.grantType.GetText(), a.scope.GetText())
 
 	return auth
 }
 
 // Set applies the values for the OAuth2 authentication scheme.
-func (a *OAuth2View) Set(data *state.OAuth2RequestAuthentication) {
+func (a *OAuth2View) Set(data *auth.OAuth2RequestAuthentication) {
 	a.tokenURL.SetText(data.TokenURL)
 	a.clientID.SetText(data.ClientID)
 	a.clientSecret.SetText(data.ClientSecret)

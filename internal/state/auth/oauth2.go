@@ -1,4 +1,4 @@
-package state
+package auth
 
 import (
 	"encoding/json"
@@ -8,13 +8,6 @@ import (
 	"net/url"
 	"strings"
 )
-
-// RequestAuthentication is an interface that allows abstracts authentication scheme implementations.
-type RequestAuthentication interface {
-	Type() string
-	Prepare() (*http.Request, error)
-	Apply(req *http.Request, res *http.Response) error
-}
 
 type oauth2Response struct {
 	AccessToken string `json:"access_token"`

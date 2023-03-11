@@ -7,6 +7,7 @@ import (
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/state/auth"
 	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
 	"strings"
@@ -373,7 +374,7 @@ func (p *RequestView) handleEditHeader(key string, value string) {
 	p.Reload()
 }
 
-func (p *RequestView) handleAuthenticationChange(data state.RequestAuthentication) {
+func (p *RequestView) handleAuthenticationChange(data auth.RequestAuthentication) {
 	item := p.state.Get().ActiveItem
 	if item == nil {
 		return
@@ -381,7 +382,9 @@ func (p *RequestView) handleAuthenticationChange(data state.RequestAuthenticatio
 
 	if data == nil {
 		item.Authentication.Data = nil
-	} else if oauth2 := data.(*state.OAuth2RequestAuthentication); oauth2 != nil {
+	} else if basic, ok := data.(*auth.BasicAuthentication); ok && basic != nil {
+		item.Authentication.Data = basic
+	} else if oauth2, ok := data.(*auth.OAuth2RequestAuthentication); ok && oauth2 != nil {
 		item.Authentication.Data = oauth2
 	}
 
