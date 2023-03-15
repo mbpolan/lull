@@ -58,12 +58,19 @@ func (a *AuthView) Data() auth.RequestAuthentication {
 
 // Set applies the values from the CollectionItem to the view.
 func (a *AuthView) Set(item *state.CollectionItem) {
+	// disable the option selection handler from being called and restore it afterwards
+	a.authType.SetSelectedFunc(nil)
+	defer a.authType.SetSelectedFunc(a.handleAuthTypeChange)
+
 	if item.Authentication.None() {
+		a.pages.SwitchToPage(authTypeNone)
 		a.authType.SetCurrentOption(0)
 	} else if basic, ok := item.Authentication.Data.(*auth.BasicAuthentication); ok && basic != nil {
+		a.pages.SwitchToPage(authTypeBasic)
 		a.authType.SetCurrentOption(1)
 		a.basic.Set(basic)
 	} else if oauth2, ok := item.Authentication.Data.(*auth.OAuth2RequestAuthentication); ok && oauth2 != nil {
+		a.pages.SwitchToPage(authTypeOAuth2Option)
 		a.authType.SetCurrentOption(2)
 		a.oauth2.Set(oauth2)
 	}
