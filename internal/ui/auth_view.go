@@ -42,6 +42,23 @@ func (a *AuthView) Widget() tview.Primitive {
 	return a.flex
 }
 
+// FocusPrimitives returns a slice of primitives that should receive focus.
+func (a *AuthView) FocusPrimitives() []tview.Primitive {
+	_, option := a.authType.GetCurrentOption()
+
+	// notify the handler func that parameters have changed
+	switch option {
+	case authTypeNone:
+		return []tview.Primitive{a.authType}
+	case authTypeBasic:
+		return append([]tview.Primitive{a.authType}, a.basic.FocusPrimitives()...)
+	case authTypeOAuth2Option:
+		return append([]tview.Primitive{a.authType}, a.oauth2.FocusPrimitives()...)
+	}
+
+	return []tview.Primitive{}
+}
+
 // Data returns the parameters for the current authentication scheme.
 func (a *AuthView) Data() auth.RequestAuthentication {
 	// get the authentication parameters from the subview
@@ -112,18 +129,16 @@ func (a *AuthView) build() {
 
 func (a *AuthView) handleAuthTypeChange(text string, index int) {
 	a.pages.SwitchToPage(text)
+	a.focusManager.SetPrimitives(a.FocusPrimitives()...)
 
 	// notify the handler func that parameters have changed
 	switch text {
 	case authTypeNone:
 		a.handleOAuth2ParameterChange(nil)
-		a.focusManager.SetPrimitives(a.authType)
 	case authTypeBasic:
-		a.focusManager.SetPrimitives(append(a.basic.FocusPrimitives(), a.authType)...)
 		a.basic.SetFocus()
 		a.handleBasicAuthParameterChange(a.basic.Data())
 	case authTypeOAuth2Option:
-		a.focusManager.SetPrimitives(append(a.oauth2.FocusPrimitives(), a.authType)...)
 		a.oauth2.SetFocus()
 		a.handleOAuth2ParameterChange(a.oauth2.Data())
 	}

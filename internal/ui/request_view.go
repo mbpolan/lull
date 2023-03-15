@@ -187,13 +187,12 @@ func (p *RequestView) switchToPage(view string) {
 	switch view {
 	case requestViewBody:
 		p.focusManager.SetPrimitives(p.focusHolder, p.contentType, p.body)
-		GetApplication().SetFocus(p.contentType)
 	case requestViewHeaders:
 		p.focusManager.SetPrimitives(p.focusHolder, p.headers)
-		GetApplication().SetFocus(p.headers)
 	case requestViewAuthentication:
-		p.focusManager.SetPrimitives(p.focusHolder)
-		GetApplication().SetFocus(p.auth.Widget())
+		primitives := []tview.Primitive{p.focusHolder}
+		primitives = append(primitives, p.auth.FocusPrimitives()...)
+		p.focusManager.SetPrimitives(primitives...)
 	}
 
 	p.pages.SwitchToPage(view)
