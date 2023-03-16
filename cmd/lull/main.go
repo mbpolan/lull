@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/mbpolan/lull/internal/events"
+	"github.com/mbpolan/lull/internal/logger"
 	"github.com/mbpolan/lull/internal/parsers"
 	"github.com/mbpolan/lull/internal/state"
+	"github.com/mbpolan/lull/internal/system"
 	"github.com/mbpolan/lull/internal/ui"
 	"github.com/mbpolan/lull/internal/util"
 	"github.com/rivo/tview"
@@ -20,6 +22,16 @@ var (
 
 func main() {
 	// initialize supporting modules
+	if err := system.Setup(); err != nil {
+		fmt.Printf("Could not initialize system: %s\n", err)
+		os.Exit(1)
+	}
+
+	if err := logger.Setup(); err != nil {
+		fmt.Printf("Could not initialize logging: %s\n", err)
+		os.Exit(1)
+	}
+
 	events.Setup()
 	parsers.Setup()
 
@@ -39,6 +51,7 @@ func main() {
 	initialSave := true
 	data, err := os.ReadFile(stateSavePath)
 	if err != nil {
+		logger.Infof("initializing new app state due to error: %s", err)
 		st = state.NewAppState()
 	} else {
 		st, err = state.DeserializeAppState(data)
