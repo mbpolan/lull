@@ -16,11 +16,17 @@ type KeyValueModal struct {
 func NewKeyValueModal(title, keyLabel, valueLabel string, accept KeyValueModalAcceptHandler, reject ModalRejectHandler) *KeyValueModal {
 	m := new(KeyValueModal)
 	m.BaseInputModal = NewBaseInputModal()
+	m.height = 6
 	m.onAccept = accept
 	m.onReject = reject
 	m.build(title, keyLabel, valueLabel)
 
 	return m
+}
+
+// SetFocus sets the focus on this component.
+func (m *KeyValueModal) SetFocus() {
+	GetApplication().SetFocus(m.key)
 }
 
 // SetKey sets the text for the key.

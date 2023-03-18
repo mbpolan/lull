@@ -272,7 +272,7 @@ func (p *RequestView) removeHeader() {
 func (p *RequestView) showAddHeaderModal() {
 	m := NewKeyValueModal("Add Header", "Header", "Value", p.handleAddHeader, p.hideModal)
 	p.pages.AddPage(requestViewModal, m.Widget(), true, true)
-	GetApplication().SetFocus(m.Widget())
+	m.SetFocus()
 }
 
 func (p *RequestView) handleBodyKeyEvent(event *tcell.EventKey) *tcell.EventKey {
