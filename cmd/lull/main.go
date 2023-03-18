@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/mbpolan/lull/internal/events"
 	"github.com/mbpolan/lull/internal/logger"
@@ -21,13 +22,17 @@ var (
 )
 
 func main() {
+	var logLevel string
+	flag.StringVar(&logLevel, "log-level", "error", "sets the verbosity for logging (debug, info, error)")
+	flag.Parse()
+
 	// initialize supporting modules
 	if err := system.Setup(); err != nil {
 		fmt.Printf("Could not initialize system: %s\n", err)
 		os.Exit(1)
 	}
 
-	if err := logger.Setup(); err != nil {
+	if err := logger.Setup(logLevel); err != nil {
 		fmt.Printf("Could not initialize logging: %s\n", err)
 		os.Exit(1)
 	}

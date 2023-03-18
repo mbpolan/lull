@@ -11,8 +11,13 @@ import (
 
 var sugar *zap.SugaredLogger
 
-// Setup prepares global logging for the app.
-func Setup() error {
+// Setup prepares global logging for the app with a verbosity level.
+func Setup(level string) error {
+	lvl, err := zap.ParseAtomicLevel(level)
+	if err != nil {
+		return errors.Wrap(err, "invalid log level")
+	}
+
 	cfgDir, err := system.GetConfigDir()
 	if err != nil {
 		return errors.Wrap(err, "cannot determine config directory")
@@ -31,6 +36,7 @@ func Setup() error {
 	// configure logging to the log file
 	cfg := zap.NewProductionConfig()
 	cfg.Encoding = "console"
+	cfg.Level = lvl
 	cfg.OutputPaths = []string{
 		filepath.Join(cfgDir, "logs", logFile),
 	}
